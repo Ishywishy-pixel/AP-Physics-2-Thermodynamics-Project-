@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Isothermal Compression Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg:#f3efe6;--card:#fffdf8;--ink:#17222c;--muted:#5f6a74;--line:#ddd5c6;--soft:#ebe5d8;
+ --acc:#1d63a6;--acc2:#e8f0f8;--heat:#dd5a24;--heat2:#fbe7dc;--bath:#8cc6e6;--good:#2f8a4e;--bad:#b8402c;
+ --metal:#8a96a1;--metal2:#c9d1d8;--gas:#ffffff;
+ --sans:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+ --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+ --serif:"Source Serif 4",Georgia,serif;
+}
+@media (prefers-color-scheme:dark){:root{
+ --bg:#11171c;--card:#182129;--ink:#e6edf2;--muted:#9aa8b3;--line:#2c3a45;--soft:#1f2a33;
+ --acc:#6db3ee;--acc2:#1c2c3b;--heat:#f07a45;--heat2:#3a2419;--bath:#2f6f96;--good:#5cc07f;--bad:#ef7a64;
+ --metal:#6d7a86;--metal2:#3b4853;--gas:#0f1519;}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--serif)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
+ background-image:linear-gradient(var(--soft) 1px,transparent 1px),linear-gradient(90deg,var(--soft) 1px,transparent 1px);background-size:28px 28px;z-index:-1}
+h1,h2,h3,button,label,th,.ui,select{font-family:var(--sans)}
+.wrap{max-width:1280px;margin:0 auto;padding:22px 18px 60px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+.kicker{font:600 .78rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--heat)}
+h1{font-size:clamp(1.6rem,3vw,2.3rem);line-height:1.1;margin:.15em 0 .2em;letter-spacing:-.02em}
+.sub{margin:0;color:var(--muted);max-width:70ch}
+.howto{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:14px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:start}
+.howto h2{font-size:.95rem;margin:0;grid-row:span 2;padding-top:2px}
+.howto ol{margin:0;padding-left:1.2em;display:flex;flex-wrap:wrap;gap:4px 26px;font-size:.92rem}
+.howto li{padding-left:2px}
+.lab{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(300px,1fr);gap:14px;align-items:stretch}
+@media(max-width:980px){.lab{grid-template-columns:1fr}.howto{grid-template-columns:1fr}.howto h2{grid-row:auto}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stage{padding:10px;position:relative}
+canvas{width:100%;height:auto;display:block;border-radius:8px;touch-action:none;aspect-ratio:880/440}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-top:10px}
+.ro{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ro span{display:block;font:500 .72rem var(--sans);color:var(--muted);letter-spacing:.02em}
+.ro b{font:600 1.05rem var(--mono);font-variant-numeric:tabular-nums}
+.ro b small{font-size:.75rem;font-weight:500;color:var(--muted);margin-left:3px}
+.ro.w b{color:var(--acc)}.ro.q b{color:var(--heat)}
+body.hide .num{color:transparent!important;background:repeating-linear-gradient(45deg,var(--line) 0 6px,transparent 6px 12px);border-radius:4px}
+body.hide .num small{color:transparent!important}
+
+/* guide */
+.guide{display:flex;flex-direction:column;min-height:520px;border-top:4px solid var(--heat)}
+.gtop{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.stepno{font:600 .78rem var(--mono);color:var(--heat);letter-spacing:.06em;text-transform:uppercase}
+.dots{display:flex;gap:5px;flex-wrap:wrap}
+.dots button{width:11px;height:11px;padding:0;border-radius:50%;border:1.5px solid var(--muted);background:transparent;cursor:pointer}
+.dots button.on{background:var(--heat);border-color:var(--heat)}
+.dots button.done{background:var(--muted)}
+.guide h2{font-size:1.35rem;line-height:1.2;margin:.2em 0 .45em;letter-spacing:-.01em}
+.gbody{flex:1;overflow-y:auto;font-size:.98rem}
+.gbody p{margin:0 0 .7em}
+.gbody .note{font-size:.86rem;color:var(--muted);border-left:3px solid var(--line);padding-left:10px}
+.widget{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;margin:.4em 0 .8em;font-size:.93rem}
+.widget h3{font-size:.9rem;margin:0 0 .5em}
+.choice{display:flex;flex-direction:column;gap:6px}
+.choice button{text-align:left}
+.reveal{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--acc2);border-left:4px solid var(--acc)}
+.reveal.hot{background:var(--heat2);border-left-color:var(--heat)}
+.check{list-style:none;padding:0;margin:0}
+.check li{padding-left:24px;position:relative;margin:4px 0}
+.check li::before{content:"";position:absolute;left:0;top:4px;width:14px;height:14px;border:2px solid var(--muted);border-radius:4px}
+.check li.ok::before{background:var(--good);border-color:var(--good)}
+.check li.ok::after{content:"";position:absolute;left:5px;top:6px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.gnav{display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+button{font:500 .9rem var(--sans);padding:8px 13px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;transition:transform .08s,background .15s}
+button:hover{background:var(--soft)}
+button:active{transform:translateY(1px)}
+button.main{background:var(--acc);border-color:var(--acc);color:#fff}
+button.main:hover{filter:brightness(1.08);background:var(--acc)}
+button.hotbtn{background:var(--heat);border-color:var(--heat);color:#fff}
+button.picked{outline:2px solid var(--acc);background:var(--acc2)}
+button[aria-pressed="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--heat);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+input[type=number]{font:500 1rem var(--mono);width:120px;padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.big{font:600 1.1rem var(--mono)}
+
+/* controls */
+.controls{display:grid;grid-template-columns:1fr 1fr auto;gap:18px;margin-top:14px;align-items:start}
+@media(max-width:860px){.controls{grid-template-columns:1fr}}
+.ctl .top{display:flex;justify-content:space-between;align-items:baseline}
+.ctl label{font-weight:600}
+.ctl .val{font:600 1.35rem var(--mono);color:var(--acc)}
+.ctl .val small{font-size:.8rem;color:var(--muted);margin-left:3px}
+.ctl .hint{font:.8rem var(--sans);color:var(--muted);margin:0 0 2px}
+.ends{display:flex;justify-content:space-between;font:.75rem var(--mono);color:var(--muted)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer;--p:50%}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(to right,var(--acc) var(--p),var(--line) var(--p))}
+input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:8px;border-radius:4px;background:var(--acc)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-8px;border-radius:50%;background:var(--card);border:3px solid var(--acc);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--card);border:3px solid var(--acc);box-shadow:0 1px 4px rgba(0,0,0,.3);box-sizing:border-box}
+.acts{display:flex;flex-direction:column;gap:6px;min-width:190px}
+.acts .row button{flex:1}
+.fixed{font:.82rem var(--sans);color:var(--muted);margin:8px 0 0}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{border:0;border-radius:0;flex:1;font-size:.82rem;padding:7px 8px}
+.tiny{font:.76rem var(--sans);color:var(--muted);margin:2px 0 0}
+
+/* data */
+.grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;margin-top:14px}
+@media(max-width:980px){.grid2{grid-template-columns:1fr}}
+.panel h2{font-size:1.05rem;margin:0 0 .5em}
+.panel h2 small{font:500 .78rem var(--sans);color:var(--muted);margin-left:6px}
+svg{width:100%;height:auto;display:block;overflow:visible}
+.g{stroke:var(--line);stroke-width:1}.ax{stroke:var(--ink);stroke-width:1.4}
+.tk{fill:var(--muted);font:11px var(--mono)}.al{fill:var(--ink);font:12px var(--sans)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font:.78rem var(--sans);color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:5px;border-radius:2px}
+.ebar{display:grid;grid-template-columns:150px 1fr 92px;gap:10px;align-items:center;margin:9px 0;font-size:.9rem}
+.ebar span{font-family:var(--sans)}
+.etrack{position:relative;height:22px;background:var(--bg);border:1px solid var(--line);border-radius:5px}
+.etrack::after{content:"";position:absolute;left:50%;top:-4px;bottom:-4px;border-left:2px solid var(--ink);opacity:.5}
+.etrack i{position:absolute;top:2px;bottom:2px;border-radius:3px;transition:none}
+.ebar b{font:600 .95rem var(--mono);text-align:right}
+.eq{font:600 1rem var(--mono);text-align:center;margin:10px 0 2px;padding:8px;background:var(--bg);border-radius:8px}
+.sc{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font:.84rem var(--mono);font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--line);padding:5px 8px;text-align:right;white-space:nowrap}
+th{background:var(--bg);font:600 .78rem var(--sans)}
+td:nth-child(2){text-align:left;font-family:var(--sans)}
+.empty{color:var(--muted);font-size:.9rem}
+select{font-size:.85rem;padding:5px 8px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.model{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:14px}
+.model ul{margin:.2em 0 0;padding-left:1.1em;font-size:.93rem}.model li{margin-bottom:.3em}
+sub,sup{font-size:.72em;line-height:0;position:relative;vertical-align:baseline}sub{top:.3em}sup{top:-.45em}
+.apps{margin-top:14px}
+.apps>h2{font-size:1.3rem;margin:0 0 .2em}
+.apps>p{margin:0 0 12px;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:12px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;font-size:.93rem}
+.card h3{font-size:1.02rem;margin:0;display:flex;align-items:center;gap:8px}
+.card h3 .n{font:600 .75rem var(--mono);color:#fff;background:var(--heat);border-radius:50%;width:22px;height:22px;display:inline-grid;place-items:center;flex:none}
+.card p{margin:0}
+.card .link{border-left:3px solid var(--acc);padding-left:9px;font-size:.88rem}
+.card .link b{font-family:var(--sans);font-size:.78rem;color:var(--acc);text-transform:uppercase;letter-spacing:.05em;display:block}
+.card button{align-self:flex-start;margin-top:auto}
+.simbox{margin-top:14px;border:2px solid var(--heat);border-radius:12px;padding:14px;background:var(--card)}
+.simtabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.simtabs button{font-size:.82rem;padding:6px 10px}
+.simbox h3{font-size:1.15rem;margin:.2em 0 .1em}
+.simlede{margin:0 0 10px;color:var(--muted);font-size:.93rem}
+.simgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;margin-top:12px}
+#appcv{width:100%;height:auto;aspect-ratio:900/380;border-radius:10px;display:block;border:1px solid var(--line)}
+@media(max-width:860px){.simgrid{grid-template-columns:1fr}}
+.simctl{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.simctl .ctl{margin:0}
+.simtake{margin:.6em 0 0;padding:9px 12px;border-radius:8px;background:var(--acc2);border-left:4px solid var(--acc);font-size:.93rem}
+#simro{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
+.tabs{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:6px;padding:10px 0;margin:0 0 14px;background:var(--bg);border-bottom:2px solid var(--line)}
+.tabs button{font:600 .95rem var(--sans);padding:9px 16px;border-radius:9px 9px 0 0;border:1px solid var(--line);border-bottom:0;background:var(--card)}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.badge{display:inline-block;min-width:20px;padding:0 6px;margin-left:4px;border-radius:10px;background:var(--heat);color:#fff;font:600 .72rem var(--mono);line-height:18px;text-align:center}
+.view[hidden],.badge[hidden]{display:none!important}
+#simbox{scroll-margin-top:72px}
+.view{animation:fadein .2s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.jump{margin-top:8px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--card);font:500 .9rem var(--sans);padding:9px 16px;border-radius:9px;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <div>
+  <div class="kicker">AP Physics 2 · Thermodynamics · T2</div>
+  <h1>Isothermal Compression Lab</h1>
+  <p class="sub">One mole of ideal gas is trapped in a cylinder that sits in a big water bath. Push the piston in slowly and find out where your energy goes.</p>
+ </div>
+ <div class="row"><button id="hideBtn" aria-pressed="false" title="Hide all numbers so you can predict first">Predict mode: hide numbers</button></div>
+</header>
+<nav class="tabs" role="tablist" aria-label="Sections">
+ <button role="tab" data-view="lab" aria-selected="true">🧪 Lab</button>
+ <button role="tab" data-view="data" aria-selected="false">📊 Data &amp; graphs <span class="badge" id="rowBadge" hidden>0</span></button>
+ <button role="tab" data-view="model" aria-selected="false">📐 Model</button>
+ <button role="tab" data-view="applications" aria-selected="false">🌍 Real-world applications</button>
+</nav>
+
+<div class="view" id="v-lab">
+<section class="howto" aria-label="How to use">
+ <h2>How to use</h2>
+ <ol>
+  <li>Follow the lab guide. Use <b>Next</b> and <b>Back</b>. The tabs above hold your data, the model and real-world applications.</li>
+  <li>Set the temperature and final volume with the sliders.</li>
+  <li>Press <b>Compress</b>, or drag the piston handle.</li>
+  <li><b>Log this run</b> saves the result to the data table.</li>
+  <li><b>Reset</b> puts everything back to the start.</li>
+ </ol>
+</section>
+
+<div class="lab">
+ <section class="panel stage" aria-label="Lab bench">
+  <canvas id="cv" width="880" height="440" role="img" aria-label="Cylinder of gas with a piston, sitting in a water bath, with a thermometer and pressure gauge"></canvas>
+  <div class="readouts">
+   <div class="ro"><span>Volume</span><b class="num" id="rV"></b></div>
+   <div class="ro"><span>Pressure</span><b class="num" id="rP"></b></div>
+   <div class="ro"><span>Temperature</span><b class="num" id="rT"></b></div>
+   <div class="ro w"><span>Work on gas</span><b class="num" id="rW"></b></div>
+   <div class="ro q"><span>Heat</span><b class="num" id="rQ"></b></div>
+   <div class="ro"><span>ΔU</span><b class="num" id="rU"></b></div>
+   <div class="ro"><span>Piston hits</span><b class="num" id="rH"></b></div>
+  </div>
+ </section>
+
+ <aside class="panel guide" aria-label="Lab guide">
+  <div class="gtop"><span class="stepno" id="stepno"></span><div class="dots" id="dots"></div></div>
+  <h2 id="gtitle"></h2>
+  <div class="gbody" id="gbody" aria-live="polite"></div>
+  <div class="gnav"><button id="back">← Back</button><button id="next" class="main">Next →</button></div>
+ </aside>
+</div>
+
+<section class="panel controls" aria-label="Controls">
+ <div class="ctl">
+  <div class="top"><label for="sT">Temperature, T</label><span class="val"><output id="oT"></output><small>K</small></span></div>
+  <p class="hint">Bath temperature (the gas stays at this T)</p>
+  <input type="range" id="sT" min="200" max="600" step="10" value="300">
+  <div class="ends"><span>200 K</span><span>600 K</span></div>
+ </div>
+ <div class="ctl">
+  <div class="top"><label for="sV">Final volume, V<sub>f</sub></label><span class="val"><output id="oV"></output><small>m³</small></span></div>
+  <p class="hint">Where the piston stops (starts at 0.024 m³)</p>
+  <input type="range" id="sV" min="0.006" max="0.024" step="0.001" value="0.012">
+  <div class="ends"><span>0.006 m³</span><span>0.024 m³</span></div>
+ </div>
+ <div class="acts">
+  <div class="row"><button id="comp" class="main">Compress ◀</button><button id="exp">Expand ▶</button></div>
+  <div class="row"><button id="log" class="hotbtn">Log this run</button><button id="reset">Reset</button></div>
+  <p class="tiny">Log saves the final values for these settings as a row in the data table.</p>
+ </div>
+ <div style="grid-column:1/-1">
+  <div class="row" style="gap:12px;align-items:center">
+   <span class="ui" style="font-weight:600;font-size:.9rem">Cylinder walls:</span>
+   <div class="seg" role="group" aria-label="Cylinder walls">
+    <button id="mIso" aria-pressed="true">Conducting (isothermal)</button>
+    <button id="mAdi" aria-pressed="false">Insulated (what-if)</button>
+   </div>
+   <span class="tiny">Insulated is only a comparison. It is not part of the T2 model.</span>
+  </div>
+  <p class="fixed">Fixed: n = 1 mol · V<sub>i</sub> = 0.024 m³ · R = 8.314 J/(mol·K) · sign convention ΔU = Q + W, where W is work done on the gas.</p>
+ </div>
+</section>
+
+<div class="grid2">
+ <section class="panel"><h2>Pressure vs. volume <small>shaded area = work done on the gas</small></h2>
+  <svg id="pv" viewBox="0 0 560 330" role="img" aria-label="Pressure against volume graph"></svg>
+  <div class="legend" id="pvleg"></div>
+ </section>
+ <section class="panel"><h2>Energy accounting <small>so far in this compression</small></h2>
+  <div class="ebar"><span>Work on gas</span><div class="etrack"><i id="bW" style="background:var(--acc)"></i></div><b class="num" id="eW"></b></div>
+  <div class="ebar"><span>Heat, Q</span><div class="etrack"><i id="bQ" style="background:var(--heat)"></i></div><b class="num" id="eQ"></b></div>
+  <div class="ebar"><span>Change in U, ΔU</span><div class="etrack"><i id="bU" style="background:var(--good)"></i></div><b class="num" id="eU"></b></div>
+  <div class="eq num" id="eqline"></div>
+  <p class="tiny" style="text-align:center">Bars right of the line = energy into the gas. Left = energy out.</p>
+  <p id="enote" style="font-size:.92rem;margin:.6em 0 0"></p>
+ </section>
+</div>
+</div><!-- /view lab -->
+
+<div class="view" id="v-data" hidden>
+<div class="grid2">
+ <section class="panel"><h2 style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">Investigation graph
+   <label class="ui" style="font:500 .82rem var(--sans)">x-axis
+    <select id="xsel"><option value="T">Temperature T (K)</option><option value="Vf">Final volume V_f (m³)</option></select></label></h2>
+  <svg id="ig" viewBox="0 0 560 300" role="img" aria-label="Work done on gas against the chosen variable, from logged runs"></svg>
+  <div class="legend" id="igleg"></div>
+ </section>
+ <section class="panel"><h2 style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">Data table <span class="row"><button id="copy" style="font-size:.8rem;padding:5px 9px">Copy</button><button id="clear" style="font-size:.8rem;padding:5px 9px">Clear</button></span></h2>
+  <div class="sc"><table><thead><tr><th>#</th><th>Walls</th><th>T<sub>i</sub> (K)</th><th>V<sub>f</sub> (m³)</th><th>P<sub>i</sub> (kPa)</th><th>P<sub>f</sub> (kPa)</th><th>T<sub>f</sub> (K)</th><th>W (J)</th><th>Q (J)</th><th>ΔU (J)</th></tr></thead><tbody id="tb"></tbody></table></div>
+  <p class="empty" id="em">No runs yet. Pick your settings and press “Log this run”.</p>
+ </section>
+</div>
+</div><!-- /view data -->
+
+<div class="view" id="v-model" hidden>
+<div class="model">
+ <section class="panel"><h2>System and energy transfers</h2>
+  <ul><li><b>System:</b> the 1 mol of ideal gas in the cylinder.</li>
+  <li><b>Surroundings:</b> the piston (you) and the water bath.</li>
+  <li><b>Work:</b> into the gas (W &gt; 0) because the piston pushes inward.</li>
+  <li><b>Heat:</b> out of the gas into the bath (Q &lt; 0), the same size as W.</li>
+  <li><b>ΔU = 0</b>, because U of an ideal gas depends only on T.</li></ul></section>
+ <section class="panel"><h2>Assumptions</h2>
+  <ul><li>Ideal gas: point molecules, no forces between them.</li>
+  <li>Quasi-static: slow enough that the gas is in equilibrium at every step.</li>
+  <li>The bath is big enough that its temperature never changes.</li>
+  <li>Closed cylinder (n = 1 mol) and a frictionless piston.</li></ul></section>
+ <section class="panel"><h2>Limitations</h2>
+  <ul><li>Tiny volumes / high pressures: real gases stop acting ideal and can liquefy, so V stops at 0.006 m³.</li>
+  <li>Heat leaves through the wall at a finite rate (time constant 0.03 s, an estimate). A fast push leaves no time for it, so T rises. Watch the thermocouple meter.</li>
+  <li>The moving dots are a 2D picture. The numbers come from the equations, not from counting dots.</li></ul></section>
+</div>
+</div><!-- /view model -->
+<div class="view" id="v-applications" hidden>
+<section class="panel apps" id="apps" aria-label="Real-world applications">
+ <h2>Real-world applications</h2>
+ <p>Slow compression with heat flowing out shows up in more places than you'd think.</p>
+ <div class="cards">
+  <div class="card"><h3><span class="n">1</span>Bike and hand pumps</h3>
+   <p>Pump slowly and the barrel stays cool. Pump hard and fast and it gets noticeably warm.</p>
+   <div class="link"><b>Link to T2</b>Slow pumping gives heat time to leave, so it's close to isothermal. Fast pumping is closer to the insulated what-if: the work stays in the air and T rises.</div>
+   <button data-sim="0" class="main">▶ Run simulation</button></div>
+  <div class="card"><h3><span class="n">2</span>Filling scuba tanks</h3>
+   <p>Air is squeezed to around 200 times atmospheric pressure, and the tank heats up while it fills. Dive shops fill slowly, and some put the tank in a water bath, just like this lab.</p>
+   <div class="link"><b>Link to T2</b>The bath carries heat away so the air stays near room temperature. A tank filled hot loses pressure as it cools, because P is proportional to T at a fixed volume.</div><button data-sim="1" class="main">▶ Run simulation</button></div>
+  <div class="card"><h3><span class="n">3</span>Multi-stage air compressors</h3>
+   <p>Industrial compressors squeeze air in stages and cool it between each one with intercoolers.</p>
+   <div class="link"><b>Link to T2</b>The isothermal curve sits lowest on the P–V graph, so it has the least area and takes the least work. Halving the volume at 300 K takes 1,729 J isothermally but 2,198 J insulated, so the isothermal path saves about 21%.</div>
+   <button data-sim="2" class="main">▶ Run simulation</button></div>
+  <div class="card"><h3><span class="n">4</span>Stirling engines</h3>
+   <p>One step of the ideal Stirling cycle is exactly this process: gas is compressed while heat flows out to a cold reservoir. Stirling engines show up in cryocoolers, solar dish generators and some submarines.</p>
+   <div class="link"><b>Link to T2</b>The engine uses the same energy rule as this lab. The work in during compression leaves as heat (Q = −W), and the cycle later turns heat back into work at a higher temperature.</div><button data-sim="3" class="main">▶ Run simulation</button></div>
+  <div class="card"><h3><span class="n">5</span>Compressed-air energy storage</h3>
+   <p>Spare electricity from wind or solar can be stored by compressing air. Some designs spray water mist into the air while compressing it to pull the heat out as they go.</p>
+   <div class="link"><b>Link to T2</b>Keeping the air close to isothermal cuts the work needed. The heat that leaves can be stored and reused, so less energy is wasted.</div><button data-sim="4" class="main">▶ Run simulation</button></div>
+ </div>
+ <div class="simbox" id="simbox">
+  <div class="simtabs" id="simtabs" role="tablist"></div>
+  <h3 id="simtitle"></h3><p id="simlede" class="simlede"></p>
+  <canvas id="appcv" width="900" height="380" role="img" aria-label="Animated scene of the real-world application"></canvas>
+  <div class="simgrid">
+   <div><div id="simctl" class="simctl"></div><div class="readouts" id="simro"></div></div>
+   <div><svg id="simgraph" viewBox="0 0 420 250" role="img" aria-label="Simulation graph"></svg><div class="legend" id="simleg"></div><p id="simtake" class="simtake"></p></div>
+  </div>
+  <p class="tiny" id="simmodel"></p>
+ </div>
+</section>
+</div><!-- /view applications -->
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const R=8.314,n=1,Vi=0.024,VMIN=0.006,G=5/3;
+const S={T:300,Vf:0.012,V:Vi,mode:"iso",target:null,rows:[],strips:0,rect:null,follow:false,hide:false,
+ step:0,seen:new Set([0]),found:new Set(),pred:null,chal:null,vdot:0,showAdiabat:false,showSpots:false,Tg:300,Wacc:0,Qacc:0,path:[],maxdT:0,heatRate:0};
+
+/* ---------- physics ---------- */
+function st(V=S.V,T=S.T,mode=S.mode){
+ if(mode==="iso"){const P=n*R*T/V,W=n*R*T*Math.log(Vi/V);return{V,T,P,W,Q:-W,dU:0}}
+ const Tc=T*Math.pow(Vi/V,G-1),P=n*R*Tc/V,W=1.5*n*R*(Tc-T);return{V,T:Tc,P,W,Q:0,dU:W};
+}
+const TAU=0.03; // gas-to-bath heat transfer time constant (s), an estimate
+function liveSt(){const P=n*R*S.Tg/S.V;return{V:S.V,T:S.Tg,P,W:S.Wacc,Q:S.Qacc,dU:S.Wacc+S.Qacc}}
+function jumpTo(V){const s=st(V);S.V=V;prevV=V;S.target=null;S.Tg=s.T;S.Wacc=s.W;S.Qacc=s.Q;S.maxdT=0;S.heatRate=0;
+ S.path=[];for(let i=0;i<=60;i++){const v=Vi+(V-Vi)*i/60;S.path.push([v,st(v).P])}}
+function thermo(dV,dt){const K=10,iso=S.mode==="iso";
+ if(dV<0&&prevV>=Vi-1e-9){S.Wacc=0;S.Qacc=0;S.path=[[Vi,n*R*S.Tg/Vi]];S.maxdT=0}
+ for(let k=0;k<K;k++){const v=prevV+dV*(k+.5)/K,dv=dV/K;
+  S.Wacc+=-(n*R*S.Tg/v)*dv;S.Tg+=-(2/3)*(S.Tg/v)*dv;
+  if(iso){const dT=(S.Tg-S.T)*(1-Math.exp(-dt/K/TAU));S.Tg-=dT;S.Qacc+=-1.5*n*R*dT}}
+ S.maxdT=Math.max(S.maxdT,Math.abs(S.Tg-S.T));S.heatRate=iso?1.5*n*R*(S.Tg-S.T)/TAU:0;
+ if(dV!==0){const L=S.path[S.path.length-1];if(!L||Math.abs(L[0]-S.V)>0.00004)S.path.push([S.V,n*R*S.Tg/S.V]);if(S.path.length>3000)S.path.shift()}}
+const f=(x,d=0)=>(Math.abs(x)<0.5*Math.pow(10,-d)?0:x).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+const sgn=(x,d=0)=>(x>0.5*Math.pow(10,-d)?"+":"")+f(x,d);
+
+/* ---------- canvas setup ---------- */
+const cv=$("cv"),ctx=cv.getContext("2d"),CW=880,CH=440;
+let col={};
+function readCols(){const cs=getComputedStyle(document.documentElement);
+ ["bg","card","ink","muted","line","acc","heat","bath","metal","metal2","gas","good","soft"].forEach(k=>col[k]=cs.getPropertyValue("--"+k).trim());}
+readCols();matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{readCols()});
+let scale=1;
+function fit(){const w=cv.clientWidth||880,dpr=window.devicePixelRatio||1;cv.width=Math.round(w*dpr);cv.height=Math.round(w*CH/CW*dpr);scale=cv.width/CW}
+new ResizeObserver(fit).observe(cv);fit();
+
+const X0=80,LMAX=400,YT=230,YB=330,ROD=360;
+const xpOf=V=>X0+LMAX*V/Vi;
+const vOfXp=xp=>(xp-X0)/LMAX*Vi;
+
+/* particles */
+const NP=90,PR=4;
+const vth=T=>15*Math.sqrt(T);
+let P=[];
+function rayleigh(rms){return rms*Math.sqrt(-Math.log(1-Math.random()*0.999))}
+function initParticles(){P=[];const xp=xpOf(S.V),v0=vth(S.Tg);
+ for(let i=0;i<NP;i++){const a=Math.random()*Math.PI*2,s=rayleigh(v0);
+  P.push({x:X0+PR+Math.random()*(xp-X0-2*PR),y:YT+PR+Math.random()*(YB-YT-2*PR),vx:Math.cos(a)*s,vy:Math.sin(a)*s})}}
+initParticles();
+let trail=[],hits=[],flashes=[];
+
+/* ---------- interaction on canvas ---------- */
+let drag=false;
+function toLocal(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*CW/r.width,y:(e.clientY-r.top)*CH/r.height}}
+const handleX=()=>xpOf(S.V)+14+ROD;
+const SPOTS=[
+ {id:"gas",name:"The gas",pos:()=>({x:X0+(xpOf(S.V)-X0)/2,y:280}),
+  txt:"1 mol of ideal gas. Each dot is a molecule. Their speed depends on temperature, so the colour of the dots tells you how hot the gas is."},
+ {id:"piston",name:"The piston",pos:()=>({x:xpOf(S.V)+7,y:280}),
+  txt:"A sealed piston with O-rings. Push it in and you do positive work on the gas. Grab the black handle on the right and drag it."},
+ {id:"bath",name:"The water bath",pos:()=>({x:470,y:372}),
+  txt:"A stirred tank of water held at a set temperature by the bath controller. This is the reservoir. Heat flows through the steel cylinder wall into or out of it."},
+ {id:"thermo",name:"The thermocouple meter",pos:()=>({x:695,y:74}),
+  txt:"A thermocouple probe sits inside the cylinder. The meter shows the gas temperature on top and the bath temperature underneath. Keep an eye on it when you compress."},
+ {id:"gauge",name:"The pressure gauge",pos:()=>({x:130,y:95}),
+  txt:"A Bourdon pressure gauge reading the gas pressure. 100 kPa is about normal air pressure."}];
+let spotInfo=null;
+cv.addEventListener("pointerdown",e=>{const p=toLocal(e);
+ if(Math.hypot(p.x-handleX(),p.y-280)<30){drag=true;S.target=null;cv.setPointerCapture(e.pointerId);dragOff=p.x-handleX();return}
+ if(S.showSpots){for(const s of SPOTS){const q=s.pos();if(Math.hypot(p.x-q.x,p.y-q.y)<34){S.found.add(s.id);spotInfo=s;renderGuide();return}}}
+});
+let dragOff=0,lastDragT=0;
+cv.addEventListener("pointermove",e=>{const p=toLocal(e);
+ if(drag){const xp=p.x-dragOff-14-ROD;let V=vOfXp(xp);V=Math.max(VMIN,Math.min(Vi,V));setV(V);return}
+ const over=Math.hypot(p.x-handleX(),p.y-280)<30||(S.showSpots&&SPOTS.some(s=>{const q=s.pos();return Math.hypot(p.x-q.x,p.y-q.y)<34}));
+ cv.style.cursor=over?(Math.hypot(p.x-handleX(),p.y-280)<30?"grab":"pointer"):"default"});
+const endDrag=()=>{drag=false};
+cv.addEventListener("pointerup",endDrag);cv.addEventListener("pointercancel",endDrag);
+
+let prevV=S.V;
+function setV(V){S.V=V;if(S.V<S.Vf-1e-9&&!drag){} }
+
+/* ---------- main loop ---------- */
+let last=performance.now(),acc=0;
+function loop(t){
+ let dt=Math.min(0.033,(t-last)/1000);last=t;
+ // piston motion
+ if(S.target!==null){const d=S.target-S.V,rate=0.0042;const step=Math.sign(d)*Math.min(Math.abs(d),rate*dt);S.V+=step;if(Math.abs(S.target-S.V)<1e-7){S.V=S.target;S.target=null}}
+ const dV=S.V-prevV;S.vdot=dV/Math.max(dt,1e-4);thermo(dV,dt);prevV=S.V;
+ stepParticles(dt);
+ draw(t/1000);
+ if(Math.abs(S.vdot)>1e-7||(S.mode==="iso"&&Math.abs(S.Tg-S.T)>0.02)||t-acc>250){update();acc=t}
+ requestAnimationFrame(loop);
+}
+function stepParticles(dt){
+ const xp=xpOf(S.V),vp=LMAX*S.vdot/Vi,target=vth(S.Tg),iso=S.mode==="iso",now=performance.now();
+ let ss=0;
+ for(let i=0;i<P.length;i++){const p=P[i];
+  p.x+=p.vx*dt;p.y+=p.vy*dt;
+  if(p.x<X0+PR){p.x=X0+PR;p.vx=Math.abs(p.vx);wall(p,target,iso)}
+  if(p.y<YT+PR){p.y=YT+PR;p.vy=Math.abs(p.vy);wall(p,target,iso)}
+  if(p.y>YB-PR){p.y=YB-PR;p.vy=-Math.abs(p.vy);wall(p,target,iso)}
+  if(p.x>xp-PR){p.x=xp-PR;if(p.vx>vp){p.vx=2*vp-p.vx;hits.push(now)}}
+  ss+=p.vx*p.vx+p.vy*p.vy}
+ // keep the dots matched to the calculated temperature
+ const rms=Math.sqrt(ss/P.length);if(rms>0){const k=Math.pow(target/rms,0.2);for(const p of P){p.vx*=k;p.vy*=k}}
+ while(hits.length&&now-hits[0]>2000)hits.shift();
+ if(S.follow){trail.push({x:P[0].x,y:P[0].y});if(trail.length>60)trail.shift()}
+ for(const fl of flashes)fl.life-=dt;flashes=flashes.filter(x=>x.life>0);
+}
+function wall(p,target,iso){if(!iso)return;const s=Math.hypot(p.vx,p.vy);if(s<1)return;
+ const ns=s+(rayleigh(target)-s)*0.5,k=ns/s;
+ if(s-ns>target*0.35&&S.vdot<0&&flashes.length<40)flashes.push({x:p.x,y:p.y,dir:p.y<280?-1:1,life:0.6});
+ p.vx*=k;p.vy*=k}
+
+/* ---------- drawing ---------- */
+function speedColor(s){const T=(s/15)**2;const u=Math.max(0,Math.min(1,(T-150)/900));
+ const h=215-215*u;return `hsl(${h} 80% ${52-6*u}%)`}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function text(s,x,y,o={}){ctx.font=o.font||"500 13px 'Space Grotesk',system-ui,sans-serif";ctx.fillStyle=o.color||col.ink;ctx.textAlign=o.align||"left";ctx.textBaseline=o.base||"alphabetic";ctx.fillText(s,x,y)}
+function arrow(x1,y1,x2,y2,w,c){const a=Math.atan2(y2-y1,x2-x1);ctx.strokeStyle=c;ctx.fillStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2-Math.cos(a)*w*2.5,y2-Math.sin(a)*w*2.5);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-Math.cos(a-0.45)*w*4,y2-Math.sin(a-0.45)*w*4);ctx.lineTo(x2-Math.cos(a+0.45)*w*4,y2-Math.sin(a+0.45)*w*4);ctx.closePath();ctx.fill()}
+
+function draw(time){
+ ctx.setTransform(scale,0,0,scale,0,0);ctx.clearRect(0,0,CW,CH);
+ const saved=ax;ax=ctx;
+ const s=liveSt(),xp=xpOf(S.V),iso=S.mode==="iso",hx=handleX(),hide=S.hide;
+ // wall + bench
+ let g=ctx.createLinearGradient(0,0,0,400);g.addColorStop(0,"#e8ebee");g.addColorStop(1,"#d2d7db");ctx.fillStyle=g;ctx.fillRect(0,0,CW,400);
+ ctx.strokeStyle="rgba(0,0,0,.05)";ctx.lineWidth=1;for(let x=0;x<CW;x+=44){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,400);ctx.stroke()}for(let y=0;y<400;y+=44){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke()}
+ g=ctx.createLinearGradient(0,400,0,CH);g.addColorStop(0,"#2b3036");g.addColorStop(1,"#181b1f");ctx.fillStyle=g;ctx.fillRect(0,400,CW,40);ctx.fillStyle="rgba(255,255,255,.2)";ctx.fillRect(0,400,CW,2);
+ // tank back glass + water
+ ctx.fillStyle="rgba(225,238,246,.5)";ctx.fillRect(30,150,500,250);
+ const wl=168;g=ctx.createLinearGradient(0,wl,0,398);g.addColorStop(0,"rgba(125,195,232,.6)");g.addColorStop(1,"rgba(36,104,165,.72)");ctx.fillStyle=g;ctx.fillRect(32,wl,496,230);
+ ctx.strokeStyle="rgba(255,255,255,.13)";ctx.lineWidth=2;for(let i=0;i<6;i++){ctx.beginPath();for(let x=32;x<=528;x+=8){const y=wl+28+i*36+Math.sin(x/30+time*1.1+i*1.7)*6;x===32?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.stroke()}
+ ctx.strokeStyle="rgba(255,255,255,.75)";ctx.lineWidth=2;ctx.beginPath();for(let x=32;x<=528;x+=4){const y=wl+Math.sin(x/16+time*2.2)*1.4;x===32?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.stroke();
+ // stirrer
+ ctx.fillStyle=metal(46,50);ctx.fillRect(46,132,4,246);
+ const bw=14*Math.cos(time*18);ctx.fillStyle="#cfd5da";ctx.beginPath();ctx.ellipse(48,376,Math.abs(bw)+2,4,0,0,7);ctx.fill();
+ ctx.fillStyle="rgba(255,255,255,.55)";for(let i=0;i<10;i++){const y=372-((time*55+i*41)%200),x=48+Math.sin(time*3+i)*5+(i%3)*4;if(y>wl+4){ctx.beginPath();ctx.arc(x,y,1.5+(i%3)*.6,0,7);ctx.fill()}}
+ ctx.fillStyle=metalV(98,134,[50,56,62]);rr(33,98,30,36,4);ctx.fill();txt("stirrer",48,92,{align:"center",font:"500 10px 'Space Grotesk',sans-serif",color:"#556"});
+ // foam insulation (what-if)
+ if(!iso){ctx.fillStyle="#e7cd78";rr(50,YT-40,474,YB-YT+80,16);ctx.fill();ctx.fillStyle="rgba(150,110,30,.35)";for(let i=0;i<160;i++){ctx.beginPath();ctx.arc(54+(i*53.7)%466,YT-36+(i*29.3)%(YB-YT+72),1.6,0,7);ctx.fill()}
+  txt("Foam insulation (what-if): no heat can leave",62,YT-48,{font:"600 12px 'Space Grotesk',sans-serif",color:"#6b4e00",bg:"rgba(255,255,255,.85)"})}
+ // cylinder body + flanges
+ ctx.fillStyle=metalV(YT-16,YB+16,[112,120,128]);rr(62,YT-16,446,YB-YT+32,6);ctx.fill();
+ for(const fx of [54,492]){ctx.fillStyle=metalV(YT-28,YB+28,[100,106,114]);rr(fx,YT-28,20,YB-YT+56,4);ctx.fill();
+  ctx.fillStyle="#3c4248";for(const by of [YT-20,YT+50,YB-50,YB+20]){ctx.beginPath();ctx.arc(fx+10,by,3.2,0,7);ctx.fill()}}
+ // sight window: gas, then empty bore behind the piston
+ ctx.fillStyle="#141a1f";ctx.fillRect(X0,YT,492-X0,YB-YT);
+ const tint=Math.max(0,Math.min(1,(s.T-S.T)/40));
+ g=ctx.createLinearGradient(0,YT,0,YB);g.addColorStop(0,`rgba(${246},${250-60*tint},${255-120*tint},1)`);g.addColorStop(1,`rgba(${226},${236-60*tint},${246-120*tint},1)`);ctx.fillStyle=g;ctx.fillRect(X0,YT,xp-X0,YB-YT);
+ // heat flux into the bath
+ const hr=S.heatRate||0;
+ if(iso&&Math.abs(hr)>3){const a=Math.min(1,Math.abs(hr)/1500);ctx.globalAlpha=0.25+0.75*a;const out=hr>0;const N=Math.max(2,Math.floor((xp-X0)/70));
+  for(let i=0;i<N;i++){const x=X0+30+i*((xp-X0-60)/Math.max(1,N-1));
+   for(const side of [-1,1]){const y0=side<0?YT-18:YB+18,y1=side<0?YT-50:YB+50;const ph=Math.sin(time*8+i)*3;
+    out?arrow(x+ph,y0,x-ph,y1,2.5,col.heat):arrow(x-ph,y1,x+ph,y0,2.5,col.heat)}}
+  ctx.globalAlpha=1;txt(`${out?"heat into bath":"heat from bath"}: ${f0(Math.abs(hr))} W`,X0+(xp-X0)/2,YT-60,{align:"center",font:"600 12px 'Space Grotesk',sans-serif",color:"#fff",bg:"rgba(221,90,36,.9)"})}
+ for(const fl of flashes){ctx.globalAlpha=fl.life/0.6;ctx.fillStyle=col.heat;ctx.beginPath();ctx.arc(fl.x,fl.dir<0?YT-6-(0.6-fl.life)*40:YB+6+(0.6-fl.life)*40,3,0,7);ctx.fill()}ctx.globalAlpha=1;
+ if(S.follow&&trail.length>1){ctx.strokeStyle=col.heat;ctx.lineWidth=2;ctx.globalAlpha=.7;ctx.beginPath();trail.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.stroke();ctx.globalAlpha=1}
+ for(let i=0;i<P.length;i++){const p=P[i];const sp=Math.hypot(p.vx,p.vy);ctx.fillStyle=speedColor(sp);ctx.beginPath();ctx.arc(p.x,p.y,(S.follow&&i===0)?6:PR,0,7);ctx.fill();
+  if(S.follow&&i===0){ctx.strokeStyle="#17222c";ctx.lineWidth=2;ctx.stroke()}}
+ // engraved volume scale on the glass
+ ctx.strokeStyle="rgba(23,34,44,.55)";ctx.lineWidth=1;for(let v=0.006;v<=0.0241;v+=0.001){const x=xpOf(v),big=Math.round(v*1000)%3===0;ctx.beginPath();ctx.moveTo(x,YB);ctx.lineTo(x,YB-(big?10:5));ctx.stroke()}
+ for(const v of [0.006,0.012,0.018,0.024])txt(v.toFixed(3),xpOf(v),YB+40,{align:"center",font:"600 10px 'IBM Plex Mono',monospace",color:"#fff",bg:"rgba(20,30,40,.55)"});
+ // glass reflection + window frame
+ g=ctx.createLinearGradient(0,YT,0,YB);g.addColorStop(0,"rgba(255,255,255,.35)");g.addColorStop(.18,"rgba(255,255,255,0)");g.addColorStop(.85,"rgba(255,255,255,0)");g.addColorStop(1,"rgba(255,255,255,.12)");ctx.fillStyle=g;ctx.fillRect(X0,YT,492-X0,YB-YT);
+ ctx.strokeStyle="#4d555c";ctx.lineWidth=2;ctx.strokeRect(X0,YT,492-X0,YB-YT);
+ txt("Gas · 1 mol",X0+8,YT+18,{font:"600 11px 'Space Grotesk',sans-serif",bg:"rgba(255,255,255,.85)"});
+ // Vf marker
+ const xf=xpOf(S.Vf);ctx.setLineDash([4,4]);ctx.strokeStyle=col.acc;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(xf,YT-30);ctx.lineTo(xf,YB);ctx.stroke();ctx.setLineDash([]);
+ txt("V_f",xf,YT-34,{align:"center",font:"600 11px 'IBM Plex Mono',monospace",color:"#fff",bg:"rgba(29,99,166,.9)"});
+ // piston with O-rings
+ ctx.fillStyle=metal(xp,xp+14,[95,100,108]);rr(xp,YT+1,14,YB-YT-2,2);ctx.fill();ctx.fillStyle="#1c1f22";ctx.fillRect(xp+3,YT+1,2,YB-YT-2);ctx.fillRect(xp+9,YT+1,2,YB-YT-2);
+ // rod, gland, handle
+ ctx.fillStyle=metalV(275,285,[150,156,162]);ctx.fillRect(xp+14,275,hx-xp-22,10);
+ ctx.fillStyle=metalV(266,294,[150,118,60]);rr(524,266,14,28,3);ctx.fill();
+ ctx.fillStyle=metal(hx-12,hx,[120,126,132]);rr(hx-12,268,12,24,3);ctx.fill();
+ ctx.fillStyle=drag?"#9c3a12":"#1b1f23";rr(hx,236,20,88,9);ctx.fill();ctx.fillStyle="rgba(255,255,255,.18)";rr(hx+4,242,4,76,2);ctx.fill();
+ ctx.strokeStyle="rgba(255,255,255,.12)";for(let y=250;y<316;y+=8){ctx.beginPath();ctx.moveTo(hx+2,y);ctx.lineTo(hx+18,y);ctx.stroke()}
+ if(S.vdot<-1e-6){arrow(hx+84,226,hx+30,226,4,col.acc);txt("you push: W > 0",hx+32,212,{font:"600 12px 'Space Grotesk',sans-serif",color:col.acc})}
+ else if(S.V>Vi-1e-6&&S.target===null)txt("drag the handle ◀",CW-8,346,{align:"right",font:"500 12px 'Space Grotesk',sans-serif",color:"#556"});
+ if(Math.abs(xp-xpOf(S.Vf))>40)txt("Piston",xp+7,YT-36,{align:"center",font:"600 11px 'Space Grotesk',sans-serif",color:"#334"});
+ // Bourdon gauge
+ ctx.fillStyle=metal(126,134);ctx.fillRect(126,134,8,YT-16-134);
+ dial(130,95,38,s.P/1e6,"×100 kPa",hide?"P = ?":`${f(s.P/1000,1)} kPa`);
+ if(hide){ctx.fillStyle="#dfe4e8";ctx.beginPath();ctx.arc(130,95,30,0,7);ctx.fill();txt("?",130,103,{align:"center",font:"700 22px 'Space Grotesk',sans-serif",color:"#556"})}
+ // bath controller
+ ctx.fillStyle="#eceef0";rr(384,104,140,46,6);ctx.fill();ctx.strokeStyle="#9aa3ab";ctx.lineWidth=1.5;ctx.stroke();
+ ctx.fillStyle="#111";rr(392,112,84,22,3);ctx.fill();txt(iso?(hide?"SET ???":`SET ${S.T.toFixed(1)}`):"OFF",434,128,{align:"center",font:"600 12px 'IBM Plex Mono',monospace",color:"#ff4b2b"});
+ ctx.fillStyle=iso?"#3ad15c":"#555";ctx.beginPath();ctx.arc(498,123,5,0,7);ctx.fill();txt("bath controller (K)",454,146,{align:"center",font:"500 9px 'Space Grotesk',sans-serif",color:"#556"});
+ // thermocouple + meter
+ ctx.fillStyle=metal(324,336,[150,118,60]);rr(324,YT-28,12,14,2);ctx.fill();
+ ctx.strokeStyle="#c8a000";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(330,YT-28);ctx.bezierCurveTo(330,120,360,60,600,74);ctx.stroke();
+ ctx.fillStyle="#2d3338";rr(600,22,190,104,10);ctx.fill();ctx.fillStyle="#b9cdb3";rr(612,34,166,66,6);ctx.fill();
+ txt("GAS",620,58,{font:"600 11px 'IBM Plex Mono',monospace",color:"#2a3a2a"});txt(hide?"???.? K":`${s.T.toFixed(1)} K`,770,60,{align:"right",font:"600 20px 'IBM Plex Mono',monospace",color:"#16241a"});
+ txt("BATH",620,88,{font:"600 11px 'IBM Plex Mono',monospace",color:"#2a3a2a"});txt(hide?"???.? K":(iso?`${S.T.toFixed(1)} K`:"— —"),770,90,{align:"right",font:"600 15px 'IBM Plex Mono',monospace",color:"#16241a"});
+ txt("thermocouple meter",695,118,{align:"center",font:"500 10px 'Space Grotesk',sans-serif",color:"#cfd6db"});
+ if(!hide&&iso&&Math.abs(s.T-S.T)>=0.05)txt(`gas is ${f(Math.abs(s.T-S.T),1)} K ${s.T>S.T?"warmer":"cooler"} than the bath`,695,146,{align:"center",font:"600 11px 'Space Grotesk',sans-serif",color:"#fff",bg:s.T>S.T?"rgba(221,90,36,.92)":"rgba(29,99,166,.92)"});
+ txt(`hits on piston: ${hide?"?":(hits.length/2).toFixed(0)} per s`,560,200,{font:"500 12px 'IBM Plex Mono',monospace",color:"#556"});
+ // tank frame (front)
+ ctx.strokeStyle="#5c656d";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(30,146);ctx.lineTo(30,400);ctx.lineTo(530,400);ctx.lineTo(530,146);ctx.stroke();
+ ctx.fillStyle="rgba(255,255,255,.12)";ctx.fillRect(36,150,10,248);
+ txt(iso?`Water bath (reservoir) at ${hide?"?":S.T} K`:"Water bath: cut off by insulation",44,392,{font:"600 12px 'Space Grotesk',sans-serif",color:"#fff",bg:"rgba(20,40,60,.55)"});
+ // hotspots
+ if(S.showSpots){for(const sp of SPOTS){const q=sp.pos(),found=S.found.has(sp.id),r=16+4*Math.sin(time*4);
+  ctx.strokeStyle=found?col.good:col.heat;ctx.lineWidth=3;ctx.globalAlpha=found?.7:1;ctx.beginPath();ctx.arc(q.x,q.y,r,0,7);ctx.stroke();
+  ctx.fillStyle=found?col.good:col.heat;ctx.globalAlpha=.18;ctx.fill();ctx.globalAlpha=1;
+  if(found)text("✓",q.x,q.y+5,{align:"center",font:"700 14px sans-serif",color:col.good})}}
+ ax=saved;
+}
+
+/* ---------- DOM updates ---------- */
+const fin=()=>st(S.Vf);
+function update(){
+ const s=liveSt(),hide=S.hide;
+ $("rV").innerHTML=`${S.V.toFixed(4)}<small>m³</small>`;
+ $("rP").innerHTML=`${f(s.P/1000,1)}<small>kPa</small>`;
+ $("rT").innerHTML=`${f(s.T,0)}<small>K</small>`;
+ $("rW").innerHTML=`${sgn(s.W)}<small>J</small>`;
+ $("rQ").innerHTML=`${sgn(s.Q)}<small>J</small>`;
+ $("rU").innerHTML=`${sgn(s.dU)}<small>J</small>`;
+ $("rH").innerHTML=`${(hits.length/2).toFixed(0)}<small>/s</small>`;
+ // energy bars, scaled to the final values for these settings
+ const F=fin(),sc=Math.max(Math.abs(F.W),Math.abs(F.Q),Math.abs(F.dU),Math.abs(s.W),50)*1.08;
+ const bar=(id,v)=>{const w=Math.abs(v)/sc*50;const e=$(id);e.style.width=w+"%";e.style.left=(v>=0?50:50-w)+"%"};
+ bar("bW",s.W);bar("bQ",s.Q);bar("bU",s.dU);
+ $("eW").textContent=sgn(s.W)+" J";$("eQ").textContent=sgn(s.Q)+" J";$("eU").textContent=sgn(s.dU)+" J";
+ $("eqline").textContent=`ΔU = Q + W  →  ${sgn(s.dU)} = (${sgn(s.Q)}) + (${sgn(s.W)})`;
+ $("enote").innerHTML=S.mode==="iso"
+  ?"Every joule you push in leaves as heat into the bath, so the gas keeps the same internal energy and the same temperature."
+  :"<b>What-if:</b> with insulation, no heat can leave (Q = 0). All your work stays in the gas, so U and T go up.";
+ drawPV();
+ if(STEPS[S.step].live)STEPS[S.step].live();
+}
+
+/* ---------- P–V graph ---------- */
+const NICE=[100,150,200,250,300,400,500,600,800,1000,1200,1500,2000,2500];
+function drawPV(){
+ const W=560,H=330,l=62,r=18,t=16,b=48,xmin=0.004,xmax=0.026;
+ const pmaxNeed=Math.max(n*R*S.T/VMIN,(S.mode==="adi"||S.showAdiabat)?st(VMIN,S.T,"adi").P:0)/1000*1.05;
+ const ymax=NICE.find(v=>v>=pmaxNeed)||3000;
+ const X=v=>l+(v-xmin)/(xmax-xmin)*(W-l-r),Y=p=>H-b-p/ymax*(H-t-b);
+ let s=`<defs><clipPath id="clp"><rect x="${l}" y="${t}" width="${W-l-r}" height="${H-t-b}"/></clipPath></defs>`;
+ for(let v=0.006;v<=0.0241;v+=0.003){s+=`<line class="g" x1="${X(v)}" x2="${X(v)}" y1="${t}" y2="${H-b}"/><text class="tk" x="${X(v)}" y="${H-b+16}" text-anchor="middle">${v.toFixed(3)}</text>`}
+ for(let i=0;i<=5;i++){const p=ymax*i/5;s+=`<line class="g" x1="${l}" x2="${W-r}" y1="${Y(p)}" y2="${Y(p)}"/><text class="tk" x="${l-6}" y="${Y(p)+4}" text-anchor="end">${p}</text>`}
+ const path=(fn,a,bb,N=120)=>{let d="";for(let i=0;i<=N;i++){const v=a+(bb-a)*i/N;d+=(i?"L":"M")+X(v).toFixed(1)+" "+Y(fn(v)/1000).toFixed(1)}return d};
+ const iso=v=>n*R*S.T/v,adi=v=>st(v,S.T,"adi").P,cur=S.mode==="iso"?iso:adi;
+ s+=`<g clip-path="url(#clp)">`;
+ // reference isotherms
+ for(const T2 of [200,400,600]){if(T2===S.T)continue;s+=`<path d="${path(v=>n*R*T2/v,VMIN,Vi)}" fill="none" stroke="var(--muted)" stroke-width="1" opacity=".35"/>`;
+  const yy=Y(n*R*T2/Vi/1000);if(yy>t+8)s+=`<text class="tk" x="${X(Vi)+4}" y="${yy+4}" opacity=".7">${T2} K</text>`}
+ // shaded work area
+ const pd=S.path.map((q,i)=>(i?"L":"M")+X(q[0]).toFixed(1)+" "+Y(q[1]/1000).toFixed(1)).join("");
+ if(S.path.length>1&&S.V<Vi-1e-7)s+=`<path d="${pd} L${X(S.path[S.path.length-1][0])} ${Y(0)} L${X(S.path[0][0])} ${Y(0)} Z" fill="var(--acc)" opacity=".16"/>`;
+ // trapezoid strips
+ if(S.strips>0){const k=S.strips,dv=(Vi-S.Vf)/k;for(let i=0;i<k;i++){const a=Vi-i*dv,c=a-dv;
+  s+=`<path d="M${X(a)} ${Y(0)} L${X(a)} ${Y(iso(a)/1000)} L${X(c)} ${Y(iso(c)/1000)} L${X(c)} ${Y(0)} Z" fill="var(--heat)" fill-opacity=".14" stroke="var(--heat)" stroke-width="1.2"/>`}}
+ if(S.rect){const ph=S.rect==="i"?iso(Vi):iso(S.Vf);s+=`<rect x="${X(S.Vf)}" y="${Y(ph/1000)}" width="${X(Vi)-X(S.Vf)}" height="${Y(0)-Y(ph/1000)}" fill="var(--heat)" fill-opacity=".14" stroke="var(--heat)" stroke-width="1.5" stroke-dasharray="5 3"/>`}
+ // full predicted isotherm
+ s+=`<path d="${path(iso,VMIN,Vi)}" fill="none" stroke="var(--acc)" stroke-width="1.6" stroke-dasharray="6 4" opacity=".75"/>`;
+ if(S.mode==="adi"||S.showAdiabat)s+=`<path d="${path(adi,VMIN,Vi)}" fill="none" stroke="var(--heat)" stroke-width="1.6" stroke-dasharray="2 4"/>`;
+ // traced path
+ if(S.path.length>1&&S.V<Vi-1e-7)s+=`<path d="${pd}" fill="none" stroke="${S.mode==="iso"?"var(--acc)":"var(--heat)"}" stroke-width="3.2"/>`;
+ s+=`</g>`;
+ // Vf line
+ s+=`<line x1="${X(S.Vf)}" x2="${X(S.Vf)}" y1="${t}" y2="${H-b}" stroke="var(--acc)" stroke-dasharray="2 3"/><text class="tk" x="${X(S.Vf)+4}" y="${t+11}" style="fill:var(--acc)">V_f</text>`;
+ s+=`<line class="ax" x1="${l}" x2="${l}" y1="${t}" y2="${H-b}"/><line class="ax" x1="${l}" x2="${W-r}" y1="${H-b}" y2="${H-b}"/>`;
+ // start + current points
+ s+=`<circle cx="${X(Vi)}" cy="${Y(cur(Vi)/1000)}" r="5" fill="var(--card)" stroke="var(--ink)" stroke-width="2"/>`;
+ s+=`<circle cx="${X(S.V)}" cy="${Y(n*R*S.Tg/S.V/1000)}" r="6.5" fill="${S.mode==="iso"?"var(--acc)":"var(--heat)"}" stroke="var(--card)" stroke-width="2"/>`;
+ if(S.V<Vi-0.002){const vm=(Vi+S.V)/2,x=X(vm),y=Y(cur(vm)/1000),x2=X(vm-0.0006),y2=Y(cur(vm-0.0006)/1000),a=Math.atan2(y2-y,x2-x);
+  s+=`<path d="M${x2} ${y2} L${x2-10*Math.cos(a-0.5)} ${y2-10*Math.sin(a-0.5)} L${x2-10*Math.cos(a+0.5)} ${y2-10*Math.sin(a+0.5)} Z" fill="${S.mode==="iso"?"var(--acc)":"var(--heat)"}"/>`}
+ s+=`<text class="al" x="${(l+W-r)/2}" y="${H-10}" text-anchor="middle">Volume V (m³)</text>`;
+ s+=`<text class="al" transform="translate(16 ${(t+H-b)/2}) rotate(-90)" text-anchor="middle">Pressure P (kPa)</text>`;
+ $("pv").innerHTML=s;
+ let lg=`<span><i style="background:var(--acc)"></i>isotherm at ${S.T} K (dashed = full path)</span><span><i style="background:var(--muted);opacity:.5"></i>other isotherms</span>`;
+ if(S.mode==="adi"||S.showAdiabat)lg+=`<span><i style="background:var(--heat)"></i>insulated (adiabatic) path</span>`;
+ if(S.strips)lg+=`<span><i style="background:var(--heat);opacity:.6"></i>${S.strips} trapezoid strip${S.strips>1?"s":""}</span>`;
+ $("pvleg").innerHTML=lg;
+}
+
+/* ---------- investigation graph + table ---------- */
+function drawIG(){
+ const xv=$("xsel").value,W=560,H=300,l=62,r=18,t=16,b=48;
+ const rows=S.rows.filter(r=>r.mode==="iso");
+ const xr=xv==="T"?[150,650]:[0.004,0.026];
+ const theory=xv==="T"?(x=>n*R*x*Math.log(Vi/S.Vf)):(x=>n*R*S.T*Math.log(Vi/x));
+ let ymaxNeed=Math.max(xv==="T"?theory(650):theory(0.006),...rows.map(r=>r.W),100)*1.05;
+ const ymax=[500,1000,1500,2000,2500,3000,4000,5000,6000,8000,10000].find(v=>v>=ymaxNeed)||12000;
+ const X=x=>l+(x-xr[0])/(xr[1]-xr[0])*(W-l-r),Y=y=>H-b-y/ymax*(H-t-b);
+ let s="";
+ const ticks=xv==="T"?[200,300,400,500,600]:[0.006,0.009,0.012,0.015,0.018,0.021,0.024];
+ for(const x of ticks)s+=`<line class="g" x1="${X(x)}" x2="${X(x)}" y1="${t}" y2="${H-b}"/><text class="tk" x="${X(x)}" y="${H-b+16}" text-anchor="middle">${xv==="T"?x:x.toFixed(3)}</text>`;
+ for(let i=0;i<=5;i++){const y=ymax*i/5;s+=`<line class="g" x1="${l}" x2="${W-r}" y1="${Y(y)}" y2="${Y(y)}"/><text class="tk" x="${l-6}" y="${Y(y)+4}" text-anchor="end">${y}</text>`}
+ let d="";const a=xv==="T"?0:0.006,bb=xv==="T"?650:0.024;for(let i=0;i<=100;i++){const x=a+(bb-a)*i/100;if(x<xr[0])continue;d+=(d?"L":"M")+X(x).toFixed(1)+" "+Y(theory(x)).toFixed(1)}
+ s+=`<path d="${d}" fill="none" stroke="var(--acc)" stroke-width="1.6" stroke-dasharray="6 4" opacity=".8"/>`;
+ for(const rw of rows){const x=xv==="T"?rw.T:rw.Vf;const match=xv==="T"?Math.abs(rw.Vf-S.Vf)<1e-9:rw.T===S.T;
+  s+=`<circle cx="${X(x)}" cy="${Y(rw.W)}" r="6" fill="${match?"var(--heat)":"var(--card)"}" stroke="var(--heat)" stroke-width="2" opacity="${match?1:.55}"><title>${xv==="T"?rw.T+" K":rw.Vf.toFixed(3)+" m³"}: W = ${f(rw.W,1)} J</title></circle>`}
+ s+=`<line class="ax" x1="${l}" x2="${l}" y1="${t}" y2="${H-b}"/><line class="ax" x1="${l}" x2="${W-r}" y1="${H-b}" y2="${H-b}"/>`;
+ s+=`<text class="al" x="${(l+W-r)/2}" y="${H-10}" text-anchor="middle">${xv==="T"?"Temperature T (K)":"Final volume V_f (m³)"}</text>`;
+ s+=`<text class="al" transform="translate(16 ${(t+H-b)/2}) rotate(-90)" text-anchor="middle">Work on gas W (J)</text>`;
+ $("ig").innerHTML=s;
+ let lg=`<span><i style="background:var(--heat)"></i>logged runs (${xv==="T"?"V_f = "+S.Vf.toFixed(3)+" m³":"T = "+S.T+" K"})</span><span><i style="background:var(--acc)"></i>theory: ${xv==="T"?"W = nR ln(V_i/V_f) × T":"W = nRT ln(V_i/V_f)"}</span>`;
+ if(xv==="T"){const m=rows.filter(r=>Math.abs(r.Vf-S.Vf)<1e-9);if(m.length>=2){const sl=m.reduce((q,r)=>q+r.T*r.W,0)/m.reduce((q,r)=>q+r.T*r.T,0);lg+=`<span><b>Best-fit slope: ${f(sl,2)} J/K</b> (theory ${f(n*R*Math.log(Vi/S.Vf),2)} J/K)</span>`}}
+ $("igleg").innerHTML=lg;
+}
+function logRun(silent){const F=st(S.Vf),I=st(Vi);
+ S.rows.push({mode:S.mode,T:S.T,Vf:S.Vf,Pi:I.P,Pf:F.P,Tf:F.T,W:F.W,Q:F.Q,dU:F.dU});if(S.rows.length>60)S.rows.shift();renderTable();if(!silent)toast(`Logged: T = ${S.T} K, V_f = ${S.Vf.toFixed(3)} m³ (see the Data & graphs tab)`);}
+function renderTable(){
+ $("tb").innerHTML=S.rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.mode==="iso"?"conducting":"insulated"}</td><td>${r.T}</td><td>${r.Vf.toFixed(3)}</td><td>${f(r.Pi/1000,1)}</td><td>${f(r.Pf/1000,1)}</td><td>${f(r.Tf,0)}</td><td>${f(r.W,1)}</td><td>${f(r.Q,1)}</td><td>${f(r.dU,1)}</td></tr>`).join("");
+ $("em").style.display=S.rows.length?"none":"block";drawIG();const bd=$("rowBadge");if(bd){bd.hidden=!S.rows.length;bd.textContent=S.rows.length}
+ if(STEPS[S.step].live)STEPS[S.step].live();
+}
+let tt;function toast(m){const e=$("toast");e.textContent=m;e.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("on"),1600)}
+
+/* ---------- controls ---------- */
+function syncSliders(){$("sT").value=S.T;$("sV").value=S.Vf;$("oT").textContent=S.T;$("oV").textContent=S.Vf.toFixed(3);
+ for(const id of ["sT","sV"]){const e=$(id);e.style.setProperty("--p",(e.value-e.min)/(e.max-e.min)*100+"%")}
+ $("mIso").setAttribute("aria-pressed",S.mode==="iso");$("mAdi").setAttribute("aria-pressed",S.mode==="adi")}
+$("sT").oninput=e=>{S.T=+e.target.value;if(S.mode==="adi")jumpTo(S.V);syncSliders();drawIG();update()};
+$("sV").oninput=e=>{S.Vf=Math.round(+e.target.value*1000)/1000;if(S.V<S.Vf){S.V=S.Vf;S.target=null}if(S.target!==null)S.target=S.Vf<S.V?S.Vf:S.target;syncSliders();drawIG();update()};
+$("comp").onclick=()=>{S.target=S.Vf};
+$("exp").onclick=()=>{S.target=Vi};
+$("log").onclick=()=>logRun();
+function setMode(m){if(S.mode===m)return;S.mode=m;jumpTo(Vi);initParticles();syncSliders();update()}
+$("mIso").onclick=()=>setMode("iso");$("mAdi").onclick=()=>setMode("adi");
+function resetAll(){S.T=300;S.Vf=0.012;S.mode="iso";jumpTo(Vi);S.rows=[];S.strips=0;S.rect=null;S.showAdiabat=false;
+ initParticles();syncSliders();renderTable();update();toast("Reset to T = 300 K, V_f = 0.012 m³")}
+$("reset").onclick=()=>{resetAll();STEPS[S.step].enter?.();renderGuide()};
+$("clear").onclick=()=>{S.rows=[];renderTable()};
+$("copy").onclick=async()=>{const head="#\tWalls\tT_i (K)\tV_f (m3)\tP_i (kPa)\tP_f (kPa)\tT_f (K)\tW (J)\tQ (J)\tdU (J)";
+ const body=S.rows.map((r,i)=>[i+1,r.mode==="iso"?"conducting":"insulated",r.T,r.Vf.toFixed(3),(r.Pi/1000).toFixed(1),(r.Pf/1000).toFixed(1),r.Tf.toFixed(0),r.W.toFixed(1),r.Q.toFixed(1),r.dU.toFixed(1)].join("\t")).join("\n");
+ try{await navigator.clipboard.writeText(head+"\n"+body);toast("Table copied")}catch(e){toast("Copy was blocked by the browser")}};
+$("xsel").onchange=drawIG;
+$("hideBtn").onclick=()=>{S.hide=!S.hide;document.body.classList.toggle("hide",S.hide);$("hideBtn").setAttribute("aria-pressed",S.hide);$("hideBtn").textContent=S.hide?"Predict mode: show numbers":"Predict mode: hide numbers"};
+
+/* ---------- guide steps ---------- */
+const exact=(T,Vf)=>n*R*T*Math.log(Vi/Vf);
+function goto(V){S.target=V}
+function setup(o){if(o.T!==undefined)S.T=o.T;if(o.Vf!==undefined)S.Vf=o.Vf;if(o.mode&&o.mode!==S.mode){S.mode=o.mode;initParticles()}
+ if(o.V!==undefined)jumpTo(o.V);syncSliders();drawIG();update()}
+const STEPS=[
+{t:"Welcome to the lab",
+ enter(){S.showSpots=true;setup({mode:"iso",T:300,Vf:0.012,V:Vi})},leave(){S.showSpots=false},
+ body(){return `<p>Inside the cylinder is 1 mol of ideal gas at 300 K, taking up 0.024 m³. The cylinder sits in a big water bath, and you control the piston.</p>
+ <p>Your mission: squeeze the gas to half its volume <b>slowly</b>, then work out where the energy you put in ends up.</p>
+ <div class="widget"><h3>Meet the equipment (${S.found.size}/5 found)</h3>
+ <p style="margin:0">${spotInfo?`<b>${spotInfo.name}.</b> ${spotInfo.txt}`:"Click the pulsing circles on the lab bench."}</p></div>`}},
+{t:"Call it first",
+ enter(){setup({mode:"iso",V:Vi})},
+ body(){const o=[["up","It goes up. I'm adding energy, so it should get hotter."],["same","It stays at 300 K."],["down","It goes down."]];
+ return `<p>You're about to push the piston from 0.024 m³ to 0.012 m³. That means doing work <i>on</i> the gas.</p>
+ <div class="widget"><h3>What happens to the gas temperature?</h3><div class="choice">${o.map(([k,l])=>`<button data-pred="${k}" class="${S.pred===k?"picked":""}">${l}</button>`).join("")}</div>
+ ${S.pred?`<div class="reveal">Locked in. ${S.pred==="up"?"Fair guess, since you are adding energy. ":""}Hit Next and test it.</div>`:""}</div>`},
+ mount(el){el.querySelectorAll("[data-pred]").forEach(b=>b.onclick=()=>{S.pred=b.dataset.pred;renderGuide()})}},
+{t:"Squeeze it",
+ enter(){setup({mode:"iso",T:300,Vf:0.012})},
+ body(){return `<p>Press <b>Compress</b> under the lab, or grab the black handle and drag it left. Keep your eyes on the thermocouple meter (top right) and the pressure gauge.</p>
+ <div class="widget"><ul class="check" id="ck"></ul><div id="rv"></div></div>
+ <p class="note">Now try yanking the handle in <b>fast</b>. The gas heats up a lot more, because heat can't escape through the wall quickly enough. That's why the compression has to be slow to stay isothermal.</p>`},
+ live(){const ck=$("ck");if(!ck)return;const s=liveSt(),halved=S.V<=0.0121;
+  ck.innerHTML=`<li class="${halved?"ok":""}">Volume down to 0.012 m³ (now ${S.V.toFixed(4)} m³)</li><li class="${halved?"ok":""}">Pressure: ${f(st(Vi).P/1000,1)} → ${f(s.P/1000,1)} kPa</li><li class="${halved?"ok":""}">Gas temperature now: ${s.T.toFixed(1)} K (biggest rise: ${f(S.maxdT,1)} K)</li>`;
+  const msg=S.pred==="same"?"You called it.":S.pred?"Not what you predicted, and that's the interesting part.":"";
+  $("rv").innerHTML=halved?`<div class="reveal hot">${S.maxdT<5?`<b>The temperature barely moved.</b> Pressure doubled, from 104 kPa to 208 kPa. The gas only got about ${f(S.maxdT,1)} K warmer while you pushed, then settled straight back to 300 K. ${msg}`:`<b>You pushed fast</b>, so the gas got ${f(S.maxdT,0)} K warmer before the heat could escape. It still settled back to 300 K at 208 kPa. Press Expand, then Compress, to see the slow (isothermal) version.`} So where did your work go? Two more steps and you'll know.</div>`:""}},
+{t:"Why does the pressure go up?",
+ enter(){S.follow=true;trail=[];setup({mode:"iso",T:300,Vf:0.012,V:Vi})},leave(){S.follow=false},
+ body(){return `<p>Same temperature means the molecules move just as fast as before. The colours of the dots don't change. So why does P double?</p>
+ <p>Follow the big dot. In half the space it reaches the piston <b>twice as often</b>. More hits per second on each square metre means more pressure.</p>
+ <div class="widget"><h3>Count the hits</h3><div class="row"><button id="gA">Go to 0.024 m³</button><button id="gB">Go to 0.012 m³</button></div>
+ <p style="margin:.6em 0 0">Hits on piston right now: <span class="big num" id="hn">–</span> per second</p>
+ <p class="tiny">The count jumps around because it's random. Watch it for a few seconds at each volume. It should roughly double.</p></div>
+ <p>The equation says the same thing: P = nRT/V. If n, R and T don't change, halving V doubles P.</p>`},
+ mount(){$("gA").onclick=()=>goto(Vi);$("gB").onclick=()=>goto(0.012)},
+ live(){const h=$("hn");if(h)h.textContent=(hits.length/2).toFixed(0)}},
+{t:"Where does the energy go?",
+ enter(){setup({mode:"iso",T:300,Vf:0.012,V:Vi});S.showAdiabat=true},leave(){S.showAdiabat=false;if(S.mode!=="iso")setup({mode:"iso",V:Vi})},
+ body(){return `<p>Look at the <b>Energy accounting</b> panel as you compress. Watch the orange arrows too.</p>
+ <ul><li>Your push puts energy in: <b>W &gt; 0</b>.</li><li>The gas is a tiny bit warmer than the bath, so heat flows out: <b>Q &lt; 0</b>.</li><li>They cancel, so <b>ΔU = 0</b>. U of an ideal gas only depends on T, so T stays put.</li></ul>
+ <div class="widget"><h3>What if heat couldn't escape?</h3>
+ <div class="row"><button id="wIso" aria-pressed="${S.mode==="iso"}">Normal walls</button><button id="wAdi" aria-pressed="${S.mode==="adi"}">Wrap it in insulation</button><button id="wGo" class="main">Compress</button></div>
+ <div id="wr"></div></div>`},
+ mount(){$("wIso").onclick=()=>{setup({mode:"iso",V:Vi});renderGuide()};$("wAdi").onclick=()=>{setup({mode:"adi",V:Vi});renderGuide()};$("wGo").onclick=()=>goto(S.Vf)},
+ live(){const w=$("wr");if(!w)return;const done=S.V<=S.Vf+1e-6;
+  w.innerHTML=done?(S.mode==="adi"?`<div class="reveal hot">Now Q = 0, so all ${f(st().W,0)} J stays inside. T shoots up to <b>${f(st().T,0)} K</b> and P ends higher, on the orange curve. <b>That's why heat must leave</b> to keep the temperature constant.</div>`
+   :`<div class="reveal">W = +${f(st().W,0)} J in, Q = ${f(st().Q,0)} J out. Net change: zero. Now try the insulated version and compare.</div>`):""}},
+{t:"Work is the area under the curve",
+ enter(){setup({mode:"iso",T:300,Vf:0.012,V:0.012});S.strips=4},leave(){S.strips=0;S.rect=null},
+ body(){return `<p>Can't you just use W = PΔV? Not here. P climbs the whole time, so there's no single P to plug in. Try it:</p>
+ <div class="widget"><div class="row"><button id="rI">P<sub>i</sub> × ΔV</button><button id="rF">P<sub>f</sub> × ΔV</button><button id="rN">Hide box</button></div><div id="rOut" style="margin-top:6px"></div></div>
+ <p>Better idea: slice the area under the curve into trapezoids and add them up.</p>
+ <div class="widget"><h3>Number of strips: <span id="kN">${S.strips}</span></h3>
+ <input type="range" id="kS" min="1" max="16" step="1" value="${S.strips}">
+ <div id="kOut" style="margin-top:6px"></div></div>
+ <p class="note">More strips get closer to the exact area, W = nRT ln(V<sub>i</sub>/V<sub>f</sub>). Trapezoids always run a bit high here because the curve bends upward.</p>`},
+ mount(){const k=$("kS");k.style.setProperty("--p",(S.strips-1)/15*100+"%");k.oninput=()=>{S.strips=+k.value;$("kN").textContent=S.strips;k.style.setProperty("--p",(S.strips-1)/15*100+"%");update()};
+  $("rI").onclick=()=>{S.rect="i";update()};$("rF").onclick=()=>{S.rect="f";update()};$("rN").onclick=()=>{S.rect=null;update()}},
+ live(){const o=$("kOut");if(!o)return;const k=S.strips,dv=(Vi-S.Vf)/k,iso=v=>n*R*S.T/v;let A=0;for(let i=0;i<k;i++){const a=Vi-i*dv,c=a-dv;A+=(iso(a)+iso(c))/2*dv}
+  const E=exact(S.T,S.Vf);o.innerHTML=`Estimate: <b class="num">${f(A,1)} J</b> · exact: <b class="num">${f(E,1)} J</b> · off by <b class="num">${f((A-E)/E*100,2)}%</b>`;
+  const r=$("rOut");if(r){if(S.rect){const ph=S.rect==="i"?iso(Vi):iso(S.Vf),v=ph*(Vi-S.Vf);r.innerHTML=`${S.rect==="i"?"P<sub>i</sub>":"P<sub>f</sub>"}ΔV = <b class="num">${f(v,0)} J</b>, which is ${v<E?"too low":"too high"} (exact is ${f(E,0)} J). The dashed box ${v<E?"misses part of":"overshoots"} the area.`}else r.innerHTML=""}}},
+{t:"Predict, then test",
+ enter(){if(!S.chal)newChal();setup({mode:"iso",T:300,V:Vi})},
+ body(){const c=S.chal;return `<p>Your turn to be the physicist. Work it out by hand <b>before</b> you run it.</p>
+ <div class="widget"><h3>Challenge</h3><p style="margin:0 0 .5em">1 mol at <b>${c.T} K</b> is compressed from 0.024 m³ to <b>${c.Vf.toFixed(3)} m³</b>. How much work is done on the gas?</p>
+ <div class="row"><input type="number" id="pin" placeholder="W in J" step="any" value="${c.guess??""}"><button id="pchk" class="main">Check</button><button id="phint">Hint</button><button id="pnew">New challenge</button></div>
+ <div id="pres"></div></div>`},
+ mount(){$("pchk").onclick=()=>{const g=parseFloat($("pin").value);if(!isFinite(g)){$("pres").innerHTML=`<div class="reveal hot">Type a number first.</div>`;return}
+   S.chal.guess=g;const c=S.chal,E=exact(c.T,c.Vf),err=(g-E)/E*100;
+   $("pres").innerHTML=`<div class="reveal ${Math.abs(err)<=3?"":"hot"}">${Math.abs(err)<=3?"<b>Nice.</b> ":Math.abs(err)<=12?"<b>Close.</b> ":"<b>Not quite.</b> "}Exact answer: <b>${f(E,1)} J</b>. You were off by ${f(Math.abs(err),1)}%.${Math.abs(err)>12&&g<0?" Check your sign: compression means W on the gas is positive.":""}
+   <div class="row" style="margin-top:8px"><button id="prun" class="main">Run it in the lab</button></div></div>`;
+   $("prun").onclick=()=>{setup({T:c.T,Vf:c.Vf,V:Vi,mode:"iso"});goto(c.Vf)}};
+  $("phint").onclick=()=>{$("pres").innerHTML=`<div class="reveal">W = nRT ln(V<sub>i</sub>/V<sub>f</sub>). Or estimate the area with trapezoids, using P = nRT/V at a few volumes.</div>`};
+  $("pnew").onclick=()=>{newChal();renderGuide()}}},
+{t:"Investigation 1: change the temperature",
+ enter(){$("xsel").value="T";setup({mode:"iso",Vf:0.012,V:Vi})},
+ body(){return `<p>Keep V<sub>f</sub> at 0.012 m³. Set the temperature slider to at least five values, for example 200, 300, 400, 500 and 600 K. Press <b>Log this run</b> after each one.</p>
+ <div class="widget"><h3>Progress: <span id="i1n">0</span>/5 temperatures logged</h3><div id="i1r"></div></div>
+ <p class="note">Each logged run shows up as an orange dot on the investigation graph in the <b>Data &amp; graphs</b> tab.</p><button class="jump" onclick="showView('data')">Open Data &amp; graphs →</button>`},
+ live(){const el=$("i1n");if(!el)return;const set=new Set(S.rows.filter(r=>r.mode==="iso"&&Math.abs(r.Vf-0.012)<1e-9).map(r=>r.T));el.textContent=Math.min(5,set.size);
+  $("i1r").innerHTML=set.size>=5?`<div class="reveal"><b>A straight line through the origin.</b> W is proportional to T, with slope nR ln 2 ≈ 5.76 J/K. A hotter gas pushes back harder at every volume, so squeezing it takes more work. More heat has to leave, too.</div>`:""}},
+{t:"Investigation 2: change the final volume",
+ enter(){$("xsel").value="Vf";setup({mode:"iso",T:300,V:Vi})},
+ body(){return `<p>Now keep T at 300 K and change V<sub>f</sub> instead. Try 0.020, 0.018, 0.016, 0.014 and 0.012 m³, and log each one.</p>
+ <div class="widget"><h3>Progress: <span id="i2n">0</span>/5 volumes logged</h3><div id="i2r"></div></div><button class="jump" onclick="showView('data')">Open Data &amp; graphs →</button>`},
+ live(){const el=$("i2n");if(!el)return;const set=new Set(S.rows.filter(r=>r.mode==="iso"&&r.T===300).map(r=>r.Vf));el.textContent=Math.min(5,set.size);
+  $("i2r").innerHTML=set.size>=5?`<div class="reveal"><b>Not a straight line.</b> Each extra 0.002 m³ costs more work than the last, because the pressure you're pushing against is already higher. The first 0.002 m³ (0.024 → 0.022) takes about 217 J. The last 0.002 m³ (0.014 → 0.012) takes about 384 J.</div>`:""}},
+{t:"Edge cases",
+ enter(){setup({mode:"iso",T:300,V:Vi})},
+ body(){return `<p>A good model should behave sensibly at the extremes, and you should know where it stops working.</p>
+ <div class="widget"><div class="choice">
+ <button id="e1">No compression: V<sub>f</sub> = V<sub>i</sub></button>
+ <button id="e2">Squeeze to a quarter: V<sub>f</sub> = 0.006 m³</button>
+ <button id="e3">What about V → 0?</button>
+ <button id="e4">What if I push fast?</button></div><div id="eo"></div></div>`},
+ mount(){const o=$("eo");
+  $("e1").onclick=()=>{setup({Vf:0.024,V:Vi});o.innerHTML=`<div class="reveal">Nothing moves, so there's no area under the curve. W = 0, Q = 0, ΔU = 0. A boring answer, but the right one, and the sim agrees.</div>`};
+  $("e2").onclick=()=>{setup({Vf:0.006,V:Vi});goto(0.006);o.innerHTML=`<div class="reveal">V drops by 4×, so P rises 4×, to about 416 kPa. W = nRT ln 4 ≈ 3,458 J, exactly double the half-volume case, because ln 4 = 2 ln 2.</div>`};
+  $("e3").onclick=()=>{o.innerHTML=`<div class="reveal hot">The equations say P → ∞ and W → ∞. Real gases don't do that. Molecules take up space and attract each other, so the ideal-gas model breaks down and the gas could even liquefy. That's why this sim stops at 0.006 m³.</div>`};
+  $("e4").onclick=()=>{o.innerHTML=`<div class="reveal hot">Then it's not quasi-static anymore. Heat needs time to flow out, so a fast push heats the gas up. It acts more like the insulated case from step 5. This model only covers slow compression.</div>`}}},
+{t:"Your turn: teacher challenge",
+ enter(){setup({mode:"iso",V:Vi})},
+ body(){return `<p>Here's the model in one line: <b>P = nRT/V at every step, W = area under the curve, Q = −W, ΔU = 0.</b></p>
+ <p>For the demo, your teacher picks a new setting. Here's how to handle it:</p>
+ <ol><li>Turn on <b>Predict mode</b> (top right) to hide the numbers.</li><li>Set the sliders to the new values.</li><li>Predict P<sub>f</sub>, W and Q out loud.</li><li>Turn the numbers back on, compress, and compare.</li></ol>
+ <div class="widget"><div class="row"><button id="tp">${S.hide?"Show numbers":"Hide numbers"}</button><button id="tr">Back to step 1</button><button id="ta">Real-world applications →</button></div></div>
+ <p class="note">The system, assumptions and limitations are summed up in the <b>Model</b> tab.</p>`},
+ mount(){$("tp").onclick=()=>{$("hideBtn").click();renderGuide()};$("tr").onclick=()=>show(0);$("ta").onclick=()=>showView("applications")}}
+];
+function newChal(){const Ts=[250,350,400,450,500],Vs=[0.008,0.010,0.016,0.018];S.chal={T:Ts[Math.floor(Math.random()*Ts.length)],Vf:Vs[Math.floor(Math.random()*Vs.length)]}}
+function renderGuide(){const s=STEPS[S.step];
+ $("stepno").textContent=`Step ${S.step+1} of ${STEPS.length}`;$("gtitle").textContent=s.t;
+ $("gbody").innerHTML=s.body();s.mount?.($("gbody"));s.live?.();
+ $("dots").innerHTML=STEPS.map((x,i)=>`<button aria-label="Go to step ${i+1}: ${x.t}" class="${i===S.step?"on":S.seen.has(i)?"done":""}" data-i="${i}"></button>`).join("");
+ $("dots").querySelectorAll("button").forEach(b=>b.onclick=()=>show(+b.dataset.i));
+ $("back").disabled=S.step===0;$("back").style.visibility=S.step===0?"hidden":"visible";
+ $("next").textContent=S.step===STEPS.length-1?"Finish ✓":"Next →"}
+function show(i){if(i<0||i>=STEPS.length)return;STEPS[S.step].leave?.();S.step=i;S.seen.add(i);spotInfo=null;STEPS[i].enter?.();renderGuide();update()}
+$("back").onclick=()=>show(S.step-1);
+$("next").onclick=()=>{if(S.step===STEPS.length-1){toast("Nice work. Explore freely with the sliders.");return}show(S.step+1)};
+
+/* ---------- real-world application scenes ---------- */
+const AIR={cv:2.5*R,cp:3.5*R,g:1.4};
+const f0=x=>f(x,0);
+const ticks=(a,b,nn)=>Array.from({length:nn+1},(_,i)=>+(a+i*(b-a)/nn).toFixed(6));
+const niceUp=(v,arr)=>arr.find(x=>x>=v)||arr[arr.length-1];
+const ro=(label,val,unit,cls="")=>`<div class="ro ${cls}"><span>${label}</span><b class="num">${val}<small>${unit}</small></b></div>`;
+function plot(o){
+ const W=420,H=250,l=58,r=o.y2?50:14,t=12,b=42;
+ const X=x=>l+(x-o.xr[0])/(o.xr[1]-o.xr[0])*(W-l-r),Y=y=>H-b-(y-o.yr[0])/(o.yr[1]-o.yr[0])*(H-t-b);
+ const Y2=o.y2?(y=>H-b-(y-o.y2.r[0])/(o.y2.r[1]-o.y2.r[0])*(H-t-b)):Y;
+ let s=`<defs><clipPath id="cl2"><rect x="${l}" y="${t-2}" width="${W-l-r}" height="${H-t-b+4}"/></clipPath></defs>`;
+ for(const x of o.xt)s+=`<line class="g" x1="${X(x)}" x2="${X(x)}" y1="${t}" y2="${H-b}"/><text class="tk" x="${X(x)}" y="${H-b+15}" text-anchor="middle">${(o.fmtx||String)(x)}</text>`;
+ for(const y of o.yt)s+=`<line class="g" x1="${l}" x2="${W-r}" y1="${Y(y)}" y2="${Y(y)}"/><text class="tk" x="${l-6}" y="${Y(y)+4}" text-anchor="end">${(o.fmty||String)(y)}</text>`;
+ if(o.y2){for(const y of o.y2.t)s+=`<text class="tk" x="${W-r+6}" y="${Y2(y)+4}" style="fill:${o.y2.color}">${y}</text>`;
+  s+=`<text class="al" transform="translate(${W-8} ${(t+H-b)/2}) rotate(90)" text-anchor="middle" style="fill:${o.y2.color}">${o.y2.label}</text>`}
+ s+=`<g clip-path="url(#cl2)">`;
+ for(const c of o.curves){if(!c.pts||c.pts.length<2)continue;const Yc=c.ax2?Y2:Y;
+  const d=c.pts.map((q,i)=>(i?"L":"M")+X(q[0]).toFixed(1)+" "+Yc(q[1]).toFixed(1)).join("");
+  if(c.closed){s+=`<path d="${d} Z" fill="${c.color}" opacity=".14"/>`;continue}
+  s+=`<path d="${d}" fill="none" stroke="${c.color}" stroke-width="${c.w||2}" ${c.dash?`stroke-dasharray="${c.dash}"`:""} opacity="${c.op||1}" stroke-linejoin="round"/>`}
+ for(const m of o.marks||[])s+=`<circle cx="${X(m[0])}" cy="${Y(m[1])}" r="${m[3]||6}" fill="${m[2]}" stroke="var(--card)" stroke-width="2"/>`;
+ for(const lb of o.labels||[])s+=`<text class="tk" x="${X(lb[0])}" y="${Y(lb[1])}" style="fill:${lb[3]||"var(--muted)"}" text-anchor="${lb[4]||"start"}">${lb[2]}</text>`;
+ s+=`</g><line class="ax" x1="${l}" x2="${l}" y1="${t}" y2="${H-b}"/><line class="ax" x1="${l}" x2="${W-r}" y1="${H-b}" y2="${H-b}"/>`;
+ s+=`<text class="al" x="${(l+W-r)/2}" y="${H-8}" text-anchor="middle">${o.xl}</text><text class="al" transform="translate(14 ${(t+H-b)/2}) rotate(-90)" text-anchor="middle">${o.yl}</text>`;
+ return s}
+
+/* canvas + drawing helpers */
+const acv=$("appcv");let ax=acv.getContext("2d"),AW=900,AH=380;let aScale=1;
+function afit(){const w=acv.clientWidth||900,d=window.devicePixelRatio||1;acv.width=Math.round(w*d);acv.height=Math.round(w*AH/AW*d);aScale=acv.width/AW}
+new ResizeObserver(()=>{afit();if(window.__appsReady)aFrame(performance.now(),true)}).observe(acv);afit();
+function RR(x,y,w,h,r){ax.beginPath();ax.moveTo(x+r,y);ax.arcTo(x+w,y,x+w,y+h,r);ax.arcTo(x+w,y+h,x,y+h,r);ax.arcTo(x,y+h,x,y,r);ax.arcTo(x,y,x+w,y,r);ax.closePath()}
+function metal(x0,x1,base){const g=ax.createLinearGradient(x0,0,x1,0);const c=base||[96,106,116];
+ const s=(k)=>`rgb(${Math.min(255,c[0]*k)|0},${Math.min(255,c[1]*k)|0},${Math.min(255,c[2]*k)|0})`;
+ g.addColorStop(0,s(.75));g.addColorStop(.3,s(2.1));g.addColorStop(.55,s(1.45));g.addColorStop(1,s(.7));return g}
+function metalV(y0,y1,base){const g=ax.createLinearGradient(0,y0,0,y1);const c=base||[96,106,116];
+ const s=(k)=>`rgb(${Math.min(255,c[0]*k)|0},${Math.min(255,c[1]*k)|0},${Math.min(255,c[2]*k)|0})`;
+ g.addColorStop(0,s(.8));g.addColorStop(.3,s(2));g.addColorStop(.6,s(1.4));g.addColorStop(1,s(.7));return g}
+function T2rgb(T,a=1){const u=Math.max(0,Math.min(1,(T-285)/180));const r=Math.round(60+195*u),g=Math.round(150-90*u+40*Math.sin(u*Math.PI)),b=Math.round(235-205*u);return `rgba(${r},${g},${b},${a})`}
+function txt(s,x,y,o={}){ax.font=o.font||"600 13px 'Space Grotesk',system-ui,sans-serif";ax.textAlign=o.align||"left";ax.textBaseline="alphabetic";
+ if(o.bg){const w=ax.measureText(s).width;const px=o.align==="center"?x-w/2:o.align==="right"?x-w:x;ax.fillStyle=o.bg;RR(px-6,y-15,w+12,21,5);ax.fill()}
+ ax.fillStyle=o.color||"#17222c";ax.fillText(s,x,y)}
+function dial(x,y,r,frac,label,val,o={}){ax.fillStyle="#2a2f35";ax.beginPath();ax.arc(x,y,r+4,0,7);ax.fill();
+ const g=ax.createRadialGradient(x-r*.3,y-r*.3,2,x,y,r);g.addColorStop(0,"#ffffff");g.addColorStop(1,"#dfe4e8");ax.fillStyle=g;ax.beginPath();ax.arc(x,y,r,0,7);ax.fill();
+ const a0=Math.PI*.75,sw=Math.PI*1.5;ax.strokeStyle="#333";ax.lineWidth=1;
+ for(let k=0;k<=10;k++){const a=a0+sw*k/10,l=k%2?r*.12:r*.2;ax.beginPath();ax.moveTo(x+Math.cos(a)*(r-2),y+Math.sin(a)*(r-2));ax.lineTo(x+Math.cos(a)*(r-2-l),y+Math.sin(a)*(r-2-l));ax.stroke()}
+ if(o.red){ax.strokeStyle="#d23";ax.lineWidth=3;ax.beginPath();ax.arc(x,y,r-5,a0+sw*o.red,a0+sw);ax.stroke()}
+ const na=a0+sw*Math.max(0,Math.min(1.02,frac));ax.strokeStyle="#c0262b";ax.lineWidth=2.2;ax.beginPath();ax.moveTo(x-Math.cos(na)*r*.15,y-Math.sin(na)*r*.15);ax.lineTo(x+Math.cos(na)*r*.82,y+Math.sin(na)*r*.82);ax.stroke();
+ ax.fillStyle="#222";ax.beginPath();ax.arc(x,y,3.5,0,7);ax.fill();
+ if(label)txt(label,x,y+r*.42,{align:"center",font:`500 ${Math.max(8,r*.2)|0}px 'IBM Plex Mono',monospace`,color:"#555"});
+ if(val)txt(val,x,y+r+20,{align:"center",font:"600 13px 'IBM Plex Mono',monospace",color:o.vc||"#17222c",bg:o.vbg||"rgba(255,255,255,.85)"})}
+function heatShimmer(x,y,w,h,amt,t){if(amt<=0.02)return;ax.save();ax.globalAlpha=Math.min(.7,amt);ax.strokeStyle="#ff7a3c";ax.lineWidth=2;
+ for(let i=0;i<4;i++){const xx=x+w*(i+.5)/4;ax.beginPath();for(let k=0;k<=12;k++){const yy=y-k*h/12;const xo=Math.sin(k*.9+t*6+i)*4;k?ax.lineTo(xx+xo,yy):ax.moveTo(xx+xo,yy)}ax.stroke()}ax.restore()}
+function room(floorY,wall="#e9e4da",floor="#cfc6b6"){const g=ax.createLinearGradient(0,0,0,floorY);g.addColorStop(0,wall);g.addColorStop(1,"#ddd6c9");ax.fillStyle=g;ax.fillRect(0,0,AW,floorY);
+ const f2=ax.createLinearGradient(0,floorY,0,AH);f2.addColorStop(0,floor);f2.addColorStop(1,"#b8ae9c");ax.fillStyle=f2;ax.fillRect(0,floorY,AW,AH-floorY);ax.fillStyle="rgba(0,0,0,.12)";ax.fillRect(0,floorY,AW,3)}
+function shadow(x,y,w){const g=ax.createRadialGradient(x,y,2,x,y,w);g.addColorStop(0,"rgba(0,0,0,.28)");g.addColorStop(1,"rgba(0,0,0,0)");ax.fillStyle=g;ax.save();ax.translate(x,y);ax.scale(1,.18);ax.beginPath();ax.arc(0,0,w,0,7);ax.restore();ax.fill()}
+
+/* ================= 1. FLOOR PUMP + TYRE ================= */
+const PU={T0:293,Pa:101325,Vb:0.00045,Vd:0.00002,tau:0.5,tauT:1.5};
+const pump={tab:"Bike pump",title:"Floor pump inflating a bike tyre",
+ lede:"Push the handle and watch the air in the barrel. It only gets into the tyre once its pressure beats the tyre's. Fast, hard strokes heat it up. Slow strokes give the heat time to leave through the barrel walls.",
+ model:"Model: 0.45 L barrel, rigid tyre, check valve at the hose. Each push: n·c<sub>v</sub>·dT = −P dV − (heat lost to the barrel), with a barrel cooling time of 0.5 s (estimate). The tyre air loses heat to the rubber and rim with a 1.5 s time constant. The tyre starts soft, at 20 psi. Air: c<sub>v</sub> = (5/2)R.",
+ ctl:[{id:"ts",label:"Time per push",min:0.3,max:3,step:0.1,v:0.6,unit:"s"},{id:"tyre",label:"Tyre",opts:[["0.0007","Road tyre (0.7 L)"],["0.0025","Mountain bike tyre (2.5 L)"]],v:"0.0007"}],
+ btns:[["once","Push once"],["ten","Pump 10 strokes"],["flat","Let air out (to 20 psi)"]],
+ init(p){const s=this.s={Vt:+p.tyre,phase:"idle",u:0,queue:0,trace:[],prev:[],peak:PU.T0,lastPeak:PU.T0,strokes:0,open:false,Vc:PU.Vb};
+  s.nt=(PU.Pa+20*6894.76)*s.Vt/(R*PU.T0);s.Tt=PU.T0;s.nb=PU.Pa*PU.Vb/(R*PU.T0);s.Tb=PU.T0},
+ param(p,id){if(id==="tyre")this.init(p)},
+ btn(k){const s=this.s;if(k==="flat"){this.init({tyre:s.Vt});return}s.queue+=k==="ten"?10:1;if(s.phase==="idle")this.startDown()},
+ startDown(){const s=this.s;s.queue--;s.phase="down";s.open=false;s.prev=s.trace;s.trace=[[s.Vc,s.nb*R*s.Tb/s.Vc]];s.peak=s.Tb},
+ Pt(){const s=this.s;return s.nt*R*s.Tt/s.Vt},
+ step(dt,p){const s=this.s,c=AIR.cv;
+  if(s.phase==="down"){const K=20,dd=dt/K;for(let i=0;i<K&&s.phase==="down";i++){
+    let dV=-(PU.Vb-PU.Vd)/p.ts*dd;if(s.Vc+dV<PU.Vd)dV=PU.Vd-s.Vc;
+    if(!s.open){s.Tb+=-(R/c)*(s.Tb/s.Vc)*dV-(s.Tb-PU.T0)/PU.tau*dd;s.Vc+=dV;s.Tt+=-(s.Tt-PU.T0)/PU.tauT*dd;
+     const Pb=s.nb*R*s.Tb/s.Vc;s.peak=Math.max(s.peak,s.Tb);s.trace.push([s.Vc,Pb]);
+     if(Pb>=this.Pt()){s.open=true;s.n=s.nb+s.nt;s.T=(s.nb*s.Tb+s.nt*s.Tt)/s.n}}
+    else{const Vs=s.Vc+s.Vt,te=1/((s.Vc/Vs)/PU.tau+(s.Vt/Vs)/PU.tauT);s.T+=-(R/c)*(s.T/Vs)*dV-(s.T-PU.T0)/te*dd;s.Vc+=dV;
+     s.Tb=s.T;s.peak=Math.max(s.peak,s.T);s.trace.push([s.Vc,s.n*R*s.T/Vs])}
+    if(s.Vc<=PU.Vd+1e-12){if(s.open){s.nt=s.n*s.Vt/(s.Vt+PU.Vd);s.Tt=s.T}s.phase="up";s.u=0;s.lastPeak=s.peak;s.strokes++}}}
+  else{s.Tt+=-(s.Tt-PU.T0)/PU.tauT*dt;
+   if(s.phase==="up"){s.u+=dt/0.45;s.Vc=PU.Vd+(PU.Vb-PU.Vd)*Math.min(1,s.u);s.Tb=PU.T0+(s.Tb-PU.T0)*Math.exp(-dt/0.3);
+    if(s.u>=1){s.Vc=PU.Vb;s.nb=PU.Pa*PU.Vb/(R*PU.T0);s.Tb=PU.T0;s.phase="idle";if(s.queue>0)this.startDown()}}}},
+ draw(t){const s=this.s;room(330);
+  // wall pegboard detail
+  ax.fillStyle="rgba(0,0,0,.05)";for(let x=20;x<AW;x+=26)for(let y=20;y<300;y+=26){ax.beginPath();ax.arc(x,y,1.6,0,7);ax.fill()}
+  // ---- tyre / wheel on a stand
+  const Pg=this.Pt()-PU.Pa,psi=Pg/6894.76,firm=Math.min(1,Pg/600000),R0=118,cx=660,squish=(1-firm)*14,cy=330-R0+squish;
+  shadow(cx,332,130);
+  ax.fillStyle="#3a3f45";ax.fillRect(cx-4,cy,8,330-cy);ax.fillRect(cx-60,326,120,6);
+  ax.save();ax.beginPath();ax.rect(0,0,AW,330);ax.clip();
+  const tg=ax.createRadialGradient(cx-30,cy-30,R0*.6,cx,cy,R0);tg.addColorStop(0,"#2b2b2b");tg.addColorStop(1,"#141414");
+  ax.fillStyle=tg;ax.beginPath();ax.ellipse(cx,cy,R0+squish*.4,R0-squish*.35,0,0,7);ax.fill();
+  ax.strokeStyle="#333";ax.lineWidth=2;for(let k=0;k<48;k++){const a=k/48*Math.PI*2;ax.beginPath();ax.moveTo(cx+Math.cos(a)*(R0-3),cy+Math.sin(a)*(R0-3));ax.lineTo(cx+Math.cos(a)*(R0-9),cy+Math.sin(a)*(R0-9));ax.stroke()}
+  ax.restore();
+  const rg=ax.createLinearGradient(cx-100,cy-100,cx+100,cy+100);rg.addColorStop(0,"#f2f4f6");rg.addColorStop(.5,"#9aa3ab");rg.addColorStop(1,"#e1e5e8");
+  ax.strokeStyle=rg;ax.lineWidth=12;ax.beginPath();ax.arc(cx,cy,R0-24,0,7);ax.stroke();
+  ax.strokeStyle="#b9c0c6";ax.lineWidth=1.2;for(let k=0;k<24;k++){const a=k/24*Math.PI*2;ax.beginPath();ax.moveTo(cx+Math.cos(a)*8,cy+Math.sin(a)*8);ax.lineTo(cx+Math.cos(a+.25)*(R0-30),cy+Math.sin(a+.25)*(R0-30));ax.stroke()}
+  ax.fillStyle=metal(cx-14,cx+14);ax.beginPath();ax.arc(cx,cy,14,0,7);ax.fill();
+  // tyre air tint
+  if(s.Tt>PU.T0+1){ax.strokeStyle=T2rgb(s.Tt,.45);ax.lineWidth=10;ax.beginPath();ax.arc(cx,cy,R0-11,0,7);ax.stroke()}
+  // valve stem at bottom-left of rim
+  const va=Math.PI*.78,vx=cx+Math.cos(va)*(R0-28),vy=cy+Math.sin(va)*(R0-28);
+  // ---- pump
+  const px=230,bt=92,bb=300,bw=44;shadow(px,332,110);
+  // base
+  ax.fillStyle="#22262b";RR(px-95,312,190,18,6);ax.fill();ax.fillStyle="#3b4148";RR(px-90,314,180,6,3);ax.fill();
+  // barrel
+  ax.fillStyle=metal(px-bw/2,px+bw/2,[40,90,150]);RR(px-bw/2,bt,bw,bb-bt+14,8);ax.fill();
+  // cut-away window
+  const wx=px-13,ww=26,wt=bt+10,wb=bb+4,stroke=(wb-wt-18);
+  const pist=wt+stroke*(1-(s.Vc-PU.Vd)/(PU.Vb-PU.Vd));
+  ax.fillStyle="#0e1418";RR(wx,wt,ww,wb-wt,4);ax.fill();
+  const airT=s.phase==="down"||s.phase==="up"?s.Tb:PU.T0;
+  ax.fillStyle=T2rgb(airT,.9);ax.fillRect(wx+2,pist+12,ww-4,wb-pist-14);
+  ax.fillStyle="rgba(255,255,255,.75)";const dens=Math.min(60,Math.round(12*(PU.Vb/s.Vc)**.6));
+  for(let i=0;i<dens;i++){const yy=pist+14+((i*37.3+t*(40+airT/4)*(i%3+1))%(wb-pist-18)),xx=wx+4+((i*13.7)%(ww-8));ax.beginPath();ax.arc(xx,yy,1.3,0,7);ax.fill()}
+  ax.fillStyle="#1d1d1d";RR(wx+1,pist,ww-2,12,3);ax.fill();
+  // barrel heat glow + shimmer
+  const hot=Math.max(0,(airT-PU.T0)/120);if(hot>0.02){ax.fillStyle=`rgba(255,90,30,${Math.min(.45,hot*.5)})`;RR(px-bw/2,Math.max(pist,bt),bw,bb-Math.max(pist,bt)+14,8);ax.fill();heatShimmer(px-bw/2-30,Math.max(pist,bt)+20,bw+60,60,hot,t)}
+  // rod + handle
+  const hy=pist-128;ax.fillStyle=metal(px-4,px+4);ax.fillRect(px-4,hy,8,pist-hy);
+  ax.fillStyle="#111";RR(px-74,hy-16,148,22,11);ax.fill();ax.fillStyle="#2b2b2b";RR(px-70,hy-14,140,7,4);ax.fill();
+  ax.fillStyle=metal(px-12,px+12);RR(px-12,hy-12,24,16,3);ax.fill();
+  if(s.phase==="down"){ax.fillStyle="#1d63a6";ax.beginPath();ax.moveTo(px+92,hy-22);ax.lineTo(px+108,hy-22);ax.lineTo(px+100,hy-4);ax.fill();ax.fillRect(px+97,hy-48,6,28)}
+  // gauge on base
+  dial(px+60,286,26,Math.min(1,psi/160),"psi",null,{});
+  txt(`${f0(Math.max(0,psi))} psi`,px+96,292,{font:"600 13px 'IBM Plex Mono',monospace",bg:"rgba(255,255,255,.9)"});
+  // hose
+  ax.strokeStyle="#1b1b1b";ax.lineWidth=7;ax.lineCap="round";ax.beginPath();ax.moveTo(px-70,318);ax.bezierCurveTo(px-160,360,vx-240,370,vx-30,vy+40);ax.lineTo(vx,vy);ax.stroke();
+  ax.fillStyle="#c8102e";RR(vx-10,vy-8,20,16,4);ax.fill();
+  // flow puff when valve open
+  if(s.phase==="down"&&s.open){ax.fillStyle="rgba(255,255,255,.8)";for(let i=0;i<5;i++){const u=((t*2+i/5)%1);ax.beginPath();ax.arc(vx+8+u*20,vy-6-u*10,2+u*2,0,7);ax.fill()}}
+  // labels
+  ax.strokeStyle="rgba(0,0,0,.35)";ax.lineWidth=1;ax.beginPath();ax.moveTo(px+14,Math.min(wb-20,pist+40));ax.lineTo(330,128);ax.stroke();
+  txt(`Air in barrel: ${f0(airT-273)} °C`,330,128,{bg:"rgba(255,255,255,.92)"});
+  if(s.phase==="down")txt(s.open?"valve open: air flowing into tyre":"squeezing… still below tyre pressure",330,154,{font:"500 12px 'Space Grotesk',sans-serif",bg:"rgba(255,255,255,.92)",color:s.open?"#1d63a6":"#6a4b00"});
+  txt(`Tyre: ${f0(Math.max(0,psi))} psi · air ${f0(s.Tt-273)} °C`,cx,40,{align:"center",bg:"rgba(255,255,255,.92)"});
+  txt(`strokes: ${s.strokes}`,20,30,{font:"500 12px 'IBM Plex Mono',monospace",bg:"rgba(255,255,255,.8)"})},
+ graph(p){const s=this.s,Pt=this.Pt()/1000,ym=niceUp(Math.max(Pt*1.15,250,...s.trace.map(q=>q[1]/1000)),[250,400,600,800,1000,1200]);
+  const iso=ticks(PU.Vd,PU.Vb,60).map(v=>[v*1e6,PU.Pa*PU.Vb/v/1000]),adi=ticks(PU.Vd,PU.Vb,60).map(v=>[v*1e6,PU.Pa*Math.pow(PU.Vb/v,AIR.g)/1000]);
+  const tr=a=>a.map(q=>[q[0]*1e6,q[1]/1000]);
+  return plot({xr:[0,470],yr:[0,ym],xt:[0,100,200,300,400],yt:ticks(0,ym,4),xl:"Air volume in barrel (mL)",yl:"Pressure (kPa, absolute)",
+   curves:[{pts:iso,color:"var(--acc)",dash:"6 4"},{pts:adi,color:"var(--heat)",dash:"2 4"},{pts:[[0,Pt],[470,Pt]],color:"var(--muted)",dash:"3 3"},{pts:tr(s.prev),color:"var(--ink)",op:.25},{pts:tr(s.trace),color:"var(--ink)",w:3}],
+   labels:[[300,Pt+ym*.03,"tyre pressure","var(--muted)"]]})},
+ leg:`<span><i style="background:var(--acc)"></i>isothermal (slow)</span><span><i style="background:var(--heat)"></i>adiabatic (instant)</span><span><i style="background:var(--ink)"></i>this stroke</span>`,
+ ro(){const s=this.s,Pg=this.Pt()-PU.Pa;return ro("Tyre pressure",f0(Math.max(0,Pg/6894.76)),"psi","w")+ro("Strokes",s.strokes,"")+ro("Peak air temp (last push)",f0(s.lastPeak-273),"°C","q")+ro("Tyre air temp",f0(s.Tt-273),"°C")},
+ take(p){const s=this.s;if(!s.strokes)return"Press <b>Pump 10 strokes</b>, then try again with a slower push. Watch the black curve: a slow push follows the blue isotherm, a fast one rides up towards the orange adiabat.";
+  return s.lastPeak-PU.T0>15?`That push got the air to <b>${f0(s.lastPeak-273)} °C</b>. Heat couldn't leave fast enough, so the curve bent up towards the adiabat. The higher the tyre pressure, the more you have to squeeze before the valve opens, so later strokes run hotter. After you stop, the tyre air cools and its pressure drops a little.`
+   :`Slow pushes stay close to the isotherm, so the air barely warms (${f0(s.lastPeak-273)} °C peak). That's the T2 process: work goes in, heat leaves through the barrel walls.`}};
+
+/* ================= 2. SCUBA FILL STATION ================= */
+const scuba={tab:"Scuba tank",title:"Dive shop: filling a scuba tank",
+ lede:"A 12 L steel tank is filled from a high-pressure compressor until the panel gauge reads 200 bar. Then the valve is closed and the tank cools back to room temperature. Fill it fast or slow, with or without a cold-water bath.",
+ model:"Model: rigid 12 L tank, air arrives at 20 °C. Energy balance for filling: n·c<sub>v</sub>·dT = (c<sub>p</sub>T<sub>0</sub> − c<sub>v</sub>T)·dn − k(T − T<sub>0</sub>)dt. Cooling strength k is an estimate: 8 W/K in air, 50 W/K in a water bath. Time-lapse playback.",
+ ctl:[{id:"tm",label:"Fill time",min:2,max:40,step:1,v:5,unit:"min"},{id:"bath",label:"Tank standing in a water bath",toggle:true,v:0}],
+ btns:[["go","▶ Start filling"]],
+ init(p){const V=0.012,T0=293,nt=200e5*V/(R*T0),ts=p.tm*60,nd=nt/ts,k=p.bath?50:8;let n=1e5*V/(R*T0),T=T0,t=0,pk=T;const dt=ts/6000,pts=[[0,T0-273]],pp=[[0,1]];
+  let i=0;while(n*R*T/V<200e5&&t<ts*2){T+=(nd*(AIR.cp*T0-AIR.cv*T)-k*(T-T0))/(n*AIR.cv)*dt;n+=nd*dt;t+=dt;pk=Math.max(pk,T);if(++i%30===0){pts.push([t/60,T-273]);pp.push([t/60,n*R*T/V/1e5])}}
+  const tf=t,Tf=T,tau=n*AIR.cv/k;for(let j=1;j<=80;j++){const tt=j*tau*5/80,Tt=T0+(Tf-T0)*Math.exp(-tt/tau);pts.push([(tf+tt)/60,Tt-273]);pp.push([(tf+tt)/60,n*R*Tt/V/1e5])}
+  this.s={pts,pp,tf:tf/60,pk,Pc:n*R*T0/V/1e5,tend:pts[pts.length-1][0],u:0,play:false,bath:p.bath}},
+ param(p){this.init(p)},
+ btn(){this.s.u=0;this.s.play=true},
+ step(dt){const s=this.s;if(s.play){s.u+=dt/9;if(s.u>=1){s.u=1;s.play=false}}},
+ cur(){const s=this.s,i=Math.min(s.pts.length-1,Math.round(s.u*(s.pts.length-1)));return{t:s.pts[i][0],T:s.pts[i][1],P:s.pp[i][1],filling:s.pts[i][0]<=s.tf+1e-9&&s.u>0&&s.u<1}},
+ draw(t){const s=this.s,c=this.cur();room(320,"#dfe6ea","#c9c3b8");
+  // tiles
+  ax.strokeStyle="rgba(0,0,0,.05)";for(let x=0;x<AW;x+=40){ax.beginPath();ax.moveTo(x,0);ax.lineTo(x,320);ax.stroke()}for(let y=0;y<320;y+=40){ax.beginPath();ax.moveTo(0,y);ax.lineTo(AW,y);ax.stroke()}
+  // compressor unit
+  shadow(140,322,110);ax.fillStyle=metalV(110,320,[60,70,80]);RR(50,110,180,210,8);ax.fill();
+  ax.fillStyle="#2a3036";for(let i=0;i<9;i++)RR(66,130+i*12,70,5,2),ax.fill();
+  ax.fillStyle="#c8102e";RR(150,128,64,26,4);ax.fill();txt("HP AIR",182,146,{align:"center",font:"700 12px 'Space Grotesk',sans-serif",color:"#fff"});
+  const run=c.filling;ax.fillStyle=run?"#3ad15c":"#2e4033";ax.beginPath();ax.arc(196,176,6,0,7);ax.fill();txt(run?"RUNNING":"OFF",182,198,{align:"center",font:"600 10px 'IBM Plex Mono',monospace",color:"#dfe"});
+  if(run){ax.strokeStyle="rgba(255,255,255,.25)";for(let i=0;i<3;i++){const yy=250+((t*60+i*20)%40);ax.beginPath();ax.moveTo(70,yy);ax.lineTo(210,yy);ax.stroke()}}
+  // fill panel
+  ax.fillStyle="#f4f4f2";RR(270,60,170,190,8);ax.fill();ax.strokeStyle="#aab";ax.lineWidth=2;ax.stroke();
+  txt("FILL PANEL",355,82,{align:"center",font:"700 11px 'Space Grotesk',sans-serif",color:"#556"});
+  dial(355,150,52,c.P/300,"bar",`${f0(c.P)} bar`,{red:200/300});
+  // pipe compressor -> panel
+  ax.strokeStyle="#7d8790";ax.lineWidth=6;ax.beginPath();ax.moveTo(230,230);ax.lineTo(270,230);ax.stroke();
+  // clock
+  ax.fillStyle="#111";RR(300,265,110,30,5);ax.fill();const mm=Math.floor(c.t),ss=Math.floor((c.t-mm)*60);
+  txt(`${String(mm).padStart(2,"0")}:${String(ss).padStart(2,"0")}`,355,287,{align:"center",font:"600 18px 'IBM Plex Mono',monospace",color:"#ff6b4a"});
+  // water bath tub
+  const tx=600,tw=86,tt=70,tb=318;
+  if(s.bath){ax.fillStyle="rgba(120,180,220,.35)";RR(tx-110,170,220,150,10);ax.fill();ax.strokeStyle="#5a7f99";ax.lineWidth=3;ax.stroke()}
+  shadow(tx,322,70);
+  // tank body
+  const tg=ax.createLinearGradient(tx-tw/2,0,tx+tw/2,0);tg.addColorStop(0,"#a88400");tg.addColorStop(.3,"#ffd84a");tg.addColorStop(.6,"#f1c21b");tg.addColorStop(1,"#8f7000");
+  ax.fillStyle=tg;ax.beginPath();ax.moveTo(tx-tw/2,tb);ax.lineTo(tx-tw/2,tt+40);ax.quadraticCurveTo(tx-tw/2,tt,tx,tt);ax.quadraticCurveTo(tx+tw/2,tt,tx+tw/2,tt+40);ax.lineTo(tx+tw/2,tb);ax.closePath();ax.fill();
+  const hot=Math.max(0,(c.T-20)/90);if(hot>0.02){ax.fillStyle=`rgba(255,60,20,${Math.min(.5,hot*.55)})`;ax.fill();heatShimmer(tx-tw/2,tt-4,tw,50,hot,t)}
+  ax.fillStyle="rgba(0,0,0,.25)";ax.fillRect(tx-tw/2,tb-30,tw,4);ax.fillStyle="#222";ax.fillRect(tx-tw/2+10,140,tw-20,16);txt("AIR · 12 L",tx,152,{align:"center",font:"700 9px 'IBM Plex Mono',monospace",color:"#ffd84a"});
+  if(s.bath){ax.fillStyle="rgba(100,170,215,.45)";ax.fillRect(tx-108,200,216,118);ax.strokeStyle="rgba(255,255,255,.6)";ax.lineWidth=1.5;ax.beginPath();for(let x=tx-108;x<=tx+108;x+=4){const y=200+Math.sin(x/12+t*2)*1.5;x===tx-108?ax.moveTo(x,y):ax.lineTo(x,y)}ax.stroke()}
+  // valve + whip
+  ax.fillStyle=metal(tx-10,tx+10,[120,120,120]);RR(tx-10,tt-26,20,28,3);ax.fill();ax.fillStyle="#222";RR(tx-24,tt-34,48,10,5);ax.fill();
+  ax.strokeStyle="#222";ax.lineWidth=5;ax.beginPath();ax.moveTo(440,120);ax.bezierCurveTo(500,40,tx-80,30,tx-10,tt-14);ax.stroke();
+  if(c.filling){ax.fillStyle="rgba(29,99,166,.9)";for(let i=0;i<6;i++){const u=(t*1.5+i/6)%1;const x=440+(tx-450)*u,y=120-60*Math.sin(u*Math.PI)+(tt-14-120)*u;ax.beginPath();ax.arc(x,y,2.5,0,7);ax.fill()}}
+  // IR thermometer readout
+  ax.fillStyle="#2b2b2b";RR(tx+80,110,96,44,8);ax.fill();txt(`${f0(c.T)} °C`,tx+128,138,{align:"center",font:"600 18px 'IBM Plex Mono',monospace",color:c.T>40?"#ff8a5c":"#7fe0a0"});
+  txt("IR thermometer",tx+128,170,{align:"center",font:"500 11px 'Space Grotesk',sans-serif",color:"#445"});
+  ax.strokeStyle="rgba(255,60,60,.5)";ax.setLineDash([3,4]);ax.beginPath();ax.moveTo(tx+80,132);ax.lineTo(tx+tw/2,170);ax.stroke();ax.setLineDash([]);
+  const status=s.u===0?"Ready. Press Start filling.":c.filling?"Filling… compressor running":s.u<1?"Valve shut at 200 bar. Tank cooling…":`Cooled to room temperature: ${f0(s.Pc)} bar`;
+  txt(status,20,30,{bg:"rgba(255,255,255,.9)"});txt(s.u>0&&s.u<1?`time-lapse ×${f0(s.tend*60/9)}`:"",20,54,{font:"500 11px 'IBM Plex Mono',monospace",color:"#556"})},
+ graph(){const s=this.s,k=Math.round(s.u*(s.pts.length-1)),ym=niceUp(s.pk-273+8,[40,60,80,100,120,140]);
+  return plot({xr:[0,s.tend],yr:[0,ym],xt:ticks(0,s.tend,4),yt:ticks(0,ym,4),fmtx:x=>x.toFixed(0),xl:"Time (min)",yl:"Tank temperature (°C)",
+   y2:{r:[0,250],t:[0,50,100,150,200,250],color:"var(--acc)",label:"Pressure (bar)"},
+   curves:[{pts:[[0,20],[s.tend,20]],color:"var(--muted)",dash:"3 4",op:.6},{pts:s.pts.slice(0,k+1),color:"var(--heat)",w:2.6},{pts:s.pp.slice(0,k+1),color:"var(--acc)",w:2.6,ax2:true},{pts:[[s.tf,0],[s.tf,ym]],color:"var(--ink)",dash:"2 3",op:.4}],
+   labels:[[s.tf,ym*.94," valve shut","var(--muted)"]]})},
+ leg:`<span><i style="background:var(--heat)"></i>tank temperature</span><span><i style="background:var(--acc)"></i>pressure (right axis)</span><span><i style="background:var(--muted)"></i>room temperature</span>`,
+ ro(){const s=this.s;return ro("Peak tank temp",f0(s.pk-273),"°C","q")+ro("Gauge at shut-off",200,"bar")+ro("After cooling",f0(s.Pc),"bar","w")+ro("Air the diver loses",f0((200-s.Pc)/2),"%")},
+ take(){const s=this.s;return s.Pc>194?`Slow and cool, so close to isothermal. Once it's back at room temperature the tank still reads about ${f0(s.Pc)} bar. This is why shops fill slowly or use a water bath.`
+  :`Filled hot (${f0(s.pk-273)} °C peak). When it cools to 20 °C at constant volume, P drops in proportion to T, down to <b>${f0(s.Pc)} bar</b>. The diver gets about ${f0((200-s.Pc)/2)}% less air. Try a slower fill or the water bath.`}};
+
+/* ================= 3. TWO-STAGE PISTON COMPRESSOR ================= */
+const comp={tab:"Air compressor",title:"Workshop piston compressor with intercoolers",
+ lede:"Air is compressed in stages. After each cylinder, a finned intercooler pipe brings the air back to room temperature before the next squeeze. More stages keep the process closer to isothermal, so the motor does less work.",
+ model:"Model: 1 mol of air from 100 kPa, 20 °C. Each cylinder: adiabatic (PV<sup>1.4</sup> = constant). Each cooler: constant pressure back to 20 °C. Every path ends in the same state, so the works can be compared fairly. Work = area under each P–V path, found numerically.",
+ ctl:[{id:"N",label:"Number of stages",min:1,max:4,step:1,v:2,unit:""},{id:"r",label:"Final pressure",min:2,max:12,step:0.5,v:8,unit:"bar"}],
+ btns:[],
+ init(p){const T0=293,P0=1e5,V0=R*T0/P0;const staged=Nst=>{const q=Math.pow(p.r,1/Nst);let V=V0,P=P0,W=0;const pts=[[V,P]];
+   for(let s=0;s<Nst;s++){const P2=P*q,V2=V*Math.pow(1/q,1/AIR.g);for(let i=1;i<=30;i++){const v=V+(V2-V)*i/30;pts.push([v,P*Math.pow(V/v,AIR.g)])}
+    W+=(P2*V2-P*V)/(AIR.g-1);const Vc=R*T0/P2;W+=P2*(V2-Vc);pts.push([Vc,P2]);V=Vc;P=P2}return{pts,W}};
+  this.s={a:staged(p.N),one:staged(1),Wi:R*T0*Math.log(p.r),V0,Vf:V0/p.r,T0,th:this.s?this.s.th:0,q:Math.pow(p.r,1/p.N),N:p.N,r:p.r,Tout:T0*Math.pow(p.r,(AIR.g-1)/(AIR.g*p.N))}},
+ param(p){this.init(p)},
+ step(dt){this.s.th+=dt*2*Math.PI*1.2},
+ draw(t){const s=this.s;room(300,"#e4e1da","#a9a59c");
+  // skid
+  shadow(450,302,380);ax.fillStyle="#2d3238";ax.fillRect(60,286,780,16);
+  // motor
+  ax.fillStyle=metalV(196,286,[40,80,60]);RR(70,196,120,90,10);ax.fill();ax.strokeStyle="rgba(0,0,0,.35)";for(let i=0;i<8;i++){ax.beginPath();ax.moveTo(84+i*13,200);ax.lineTo(84+i*13,282);ax.stroke()}
+  txt("MOTOR",130,192,{align:"center",font:"700 11px 'Space Grotesk',sans-serif",color:"#445"});
+  // crankcase
+  const n=s.N,x0=230,x1=640,cw=(x1-x0)/n;ax.fillStyle=metalV(220,286,[70,74,80]);RR(x0-10,220,x1-x0+20,66,8);ax.fill();
+  // belt/flywheel
+  const fx=205,fy=240;ax.strokeStyle="#111";ax.lineWidth=4;ax.beginPath();ax.moveTo(130,206);ax.lineTo(fx,fy-34);ax.moveTo(130,276);ax.lineTo(fx,fy+34);ax.stroke();
+  ax.fillStyle=metal(fx-34,fx+34);ax.beginPath();ax.arc(fx,fy,34,0,7);ax.fill();ax.strokeStyle="#333";ax.lineWidth=3;for(let k=0;k<4;k++){const a=s.th+k*Math.PI/2;ax.beginPath();ax.moveTo(fx,fy);ax.lineTo(fx+Math.cos(a)*30,fy+Math.sin(a)*30);ax.stroke()}
+  // cylinders
+  const T0=s.T0,Tout=s.Tout;let prevOut=null;
+  for(let i=0;i<n;i++){const cx=x0+cw*(i+.5),w=Math.min(70,cw*.55)*(1-i*.12),ct=70+i*8,cb=220;
+   const ph=s.th+i*Math.PI/n*2,stroke=46,py=ct+20+stroke*(1-Math.cos(ph))/2;
+   // fins
+   ax.fillStyle=metal(cx-w/2-8,cx+w/2+8,[80,86,92]);for(let k=0;k<7;k++){RR(cx-w/2-8,ct+10+k*18,w+16,6,2);ax.fill()}
+   ax.fillStyle=metal(cx-w/2,cx+w/2,[90,96,104]);RR(cx-w/2,ct,w,cb-ct,6);ax.fill();
+   // cutaway: gas
+   const comp=(1-Math.cos(ph))/2;const Tg=T0+(Tout-T0)*Math.max(0,comp*comp);
+   ax.fillStyle="#0f1418";RR(cx-w/2+8,ct+8,w-16,cb-ct-14,4);ax.fill();ax.fillStyle=T2rgb(Tg,.92);ax.fillRect(cx-w/2+10,ct+10,w-20,py-ct-10);
+   ax.fillStyle="#2a2a2a";RR(cx-w/2+9,py,w-18,18,3);ax.fill();ax.fillStyle=metal(cx-4,cx+4);ax.fillRect(cx-4,py+18,8,cb-py-6);
+   // head
+   ax.fillStyle=metalV(ct-16,ct,[100,100,110]);RR(cx-w/2-10,ct-16,w+20,18,4);ax.fill();
+   txt(`Stage ${i+1}`,cx,ct-26,{align:"center",font:"700 12px 'Space Grotesk',sans-serif",bg:"rgba(255,255,255,.85)"});
+   txt(`out ${f0(Tout-273)} °C`,cx,cb+44,{align:"center",font:"600 11px 'IBM Plex Mono',monospace",color:"#fff",bg:T2rgb(Tout,.95)});
+   // intake for stage 1
+   if(i===0){ax.fillStyle="#3b3f45";RR(cx-w/2-46,ct-10,34,30,6);ax.fill();txt("air in",cx-w/2-29,ct-18,{align:"center",font:"500 11px 'Space Grotesk',sans-serif",color:"#334"})}
+   // intercooler/outlet pipe from head to next stage
+   const ox=cx+w/2+6,oy=ct-8;const nx=i<n-1?x0+cw*(i+1.5)-Math.min(70,cw*.55)*(1-(i+1)*.12)/2-6:760,ny=i<n-1?70+(i+1)*8-8:150;
+   const g=ax.createLinearGradient(ox,0,nx,0);g.addColorStop(0,T2rgb(Tout));g.addColorStop(.55,T2rgb(T0+(Tout-T0)*.3));g.addColorStop(1,T2rgb(T0));
+   ax.strokeStyle=g;ax.lineWidth=7;ax.lineCap="round";ax.beginPath();ax.moveTo(ox,oy);
+   if(i<n-1){const mx=(ox+nx)/2;ax.lineTo(ox+8,24);ax.lineTo(nx-8,24);ax.lineTo(nx,ny)}else{ax.lineTo(ox+8,30);ax.lineTo(700,30);ax.lineTo(700,ny)}ax.stroke();
+   // fins on cooler
+   ax.strokeStyle="rgba(60,70,80,.55)";ax.lineWidth=2;const fa=ox+14,fb=i<n-1?nx-14:690;for(let x=fa;x<fb;x+=6){ax.beginPath();ax.moveTo(x,16);ax.lineTo(x,32);ax.stroke()}
+   txt(i<n-1?"intercooler":"aftercooler",(fa+fb)/2,48,{align:"center",font:"500 11px 'Space Grotesk',sans-serif",color:"#334",bg:"rgba(255,255,255,.75)"})}
+  // receiver tank
+  ax.fillStyle=metalV(150,270,[150,40,40]);RR(670,150,190,120,58);ax.fill();ax.fillStyle="#333";ax.fillRect(690,268,10,20);ax.fillRect(830,268,10,20);
+  dial(765,200,30,s.r/16,"bar",`${s.r} bar`,{});
+  txt(`${n} stage${n>1?"s":""}: each ×${s.q.toFixed(2)} in pressure`,20,AH-14,{font:"600 12px 'Space Grotesk',sans-serif",bg:"rgba(255,255,255,.85)"})},
+ graph(){const s=this.s,pm=niceUp(s.r*100*1.05,[200,400,600,800,1000,1200,1400]);const iso=ticks(s.Vf,s.V0,60).map(v=>[v*1000,R*s.T0/v/1000]);
+  return plot({xr:[0,s.V0*1000*1.05],yr:[0,pm],xt:[0,6,12,18,24],yt:ticks(0,pm,4),xl:"Volume (L)",yl:"Pressure (kPa)",
+   curves:[{pts:s.one.pts.map(q=>[q[0]*1000,q[1]/1000]),color:"var(--muted)",dash:"3 4"},{pts:iso,color:"var(--acc)",w:2.4},{pts:s.a.pts.map(q=>[q[0]*1000,q[1]/1000]),color:"var(--heat)",w:2.6}]})},
+ leg:`<span><i style="background:var(--acc)"></i>isothermal (ideal)</span><span><i style="background:var(--heat)"></i>staged path</span><span><i style="background:var(--muted)"></i>one stage + aftercooler</span>`,
+ ro(){const s=this.s;return ro("Isothermal work",f0(s.Wi),"J","w")+ro(`${s.N}-stage work`,f0(s.a.W),"J")+ro("1-stage work",f0(s.one.W),"J")+ro("Extra vs isothermal",f(((s.a.W/s.Wi)-1)*100,1),"%","q")},
+ take(){const s=this.s;return `The isotherm is the lowest curve, so it has the least area and takes the least work. ${s.N>1?`With ${s.N} stages, each cylinder only gets the air to ${f0(s.Tout-273)} °C, and the job takes ${f(((s.a.W/s.Wi)-1)*100,1)}% more work than ideal. A single stage would take ${f(((s.one.W/s.Wi)-1)*100,1)}% more.`:`One stage heats the air to ${f0(s.Tout-273)} °C and takes ${f(((s.a.W/s.Wi)-1)*100,1)}% more work than ideal. Add stages and watch the orange staircase hug the isotherm.`}`}};
+
+/* ================= 4. ALPHA STIRLING ENGINE ================= */
+const stir={tab:"Stirling engine",title:"Stirling engine running on a flame",
+ lede:"Two cylinders share one crankshaft, with the hot piston 90° ahead of the cold one. Gas is squeezed mostly while it sits in the cold cylinder, where the fins carry heat away. That part is your T2 process. Then it expands while it's hot and pushes the flywheel round.",
+ model:"Model: Schmidt analysis (the standard one for Stirling engines). 1 mol of gas, isothermal hot and cold spaces, swept volume 0.012 m³ each, sinusoidal pistons 90° apart, dead volume 0.003 m³. P = nR / (V<sub>h</sub>/T<sub>h</sub> + V<sub>r</sub>/T<sub>r</sub> + V<sub>c</sub>/T<sub>c</sub>). Work = ∮P dV, found numerically.",
+ ctl:[{id:"Th",label:"Hot side temperature",min:400,max:900,step:10,v:700,unit:"K"},{id:"Tc",label:"Cold side temperature",min:250,max:350,step:5,v:300,unit:"K"},{id:"rpm",label:"Engine speed",min:30,max:300,step:10,v:90,unit:"rpm"}],
+ btns:[],
+ init(p){const Vs=0.012,Vdh=0.001,Vdc=0.001,Vr=0.001,Tr=(p.Th-p.Tc)/Math.log(p.Th/p.Tc),N=360;const pts=[];let W=0,Qh=0,Qc=0,cmpW=0;
+  const at=th=>{const Vh=Vdh+Vs*(1-Math.cos(th))/2,Vc=Vdc+Vs*(1-Math.cos(th-Math.PI/2))/2;return{Vh,Vc,V:Vh+Vc+Vr,P:R/(Vh/p.Th+Vr/Tr+Vc/p.Tc)}};
+  for(let i=0;i<=N;i++){const a=at(i/N*2*Math.PI);pts.push(a)}
+  for(let i=0;i<N;i++){const a=pts[i],b=pts[i+1],Pm=(a.P+b.P)/2;W+=Pm*(b.V-a.V);Qh+=Pm*(b.Vh-a.Vh);const dq=Pm*(b.Vc-a.Vc);Qc+=dq;if(b.Vc<a.Vc)cmpW+=-dq}
+  this.s={pts,W,Qh,Qc,cmpW,eff:W/Qh,th:this.s?this.s.th:0,at,p:{...p}}},
+ param(p){this.init(p)},
+ step(dt,p){this.s.th+=dt*2*Math.PI*p.rpm/60*0.5},
+ draw(t){const s=this.s,p=s.p,th=s.th%(2*Math.PI),st=s.at(th);room(318,"#e7e2d8","#bdb3a3");
+  // table top
+  ax.fillStyle="#8a6a4a";ax.fillRect(80,318,740,12);ax.fillStyle="#6c5238";ax.fillRect(80,330,740,6);
+  const hx=320,cx2=580,cyl=72,ctop=60,cbot=196,crY=268,cr=28;
+  const pistonY=(phi,x)=>{return ctop+16+ (cr*(1-Math.cos(phi)))*1.9}; // visual stroke
+  // base frame
+  ax.fillStyle="#3a3f45";RR(250,250,400,70,8);ax.fill();
+  // flywheel
+  const fx=450,fy=246,fr=78;shadow(fx,318,90);
+  ax.fillStyle=metal(fx-fr,fx+fr,[110,40,40]);ax.beginPath();ax.arc(fx,fy,fr,0,7);ax.fill();ax.fillStyle="#e7e2d8";ax.beginPath();ax.arc(fx,fy,fr-14,0,7);ax.fill();
+  ax.strokeStyle=metal(fx-fr,fx+fr,[110,40,40]);ax.lineWidth=8;for(let k=0;k<5;k++){const a=th+k*2*Math.PI/5;ax.beginPath();ax.moveTo(fx,fy);ax.lineTo(fx+Math.cos(a)*(fr-12),fy+Math.sin(a)*(fr-12));ax.stroke()}
+  ax.fillStyle=metal(fx-12,fx+12);ax.beginPath();ax.arc(fx,fy,12,0,7);ax.fill();
+  // crankshaft line
+  ax.strokeStyle="#666";ax.lineWidth=6;ax.beginPath();ax.moveTo(hx,crY);ax.lineTo(cx2,crY);ax.stroke();
+  const drawCyl=(x,phi,hot)=>{
+   // crank disc + pin
+   const pinx=x+cr*Math.sin(phi),piny=crY-cr*Math.cos(phi);
+   ax.fillStyle=metal(x-cr-6,x+cr+6);ax.beginPath();ax.arc(x,crY,cr+6,0,7);ax.fill();
+   const py=ctop+14+(cr*(1-Math.cos(phi)))*1.9; // piston top
+   // cylinder body
+   ax.fillStyle=hot?metal(x-cyl/2,x+cyl/2,[110,70,50]):metal(x-cyl/2,x+cyl/2,[60,80,110]);RR(x-cyl/2,ctop,cyl,cbot-ctop,5);ax.fill();
+   if(!hot){ax.fillStyle=metal(x-cyl/2-16,x+cyl/2+16,[70,95,130]);for(let k=0;k<6;k++){RR(x-cyl/2-16,ctop+6+k*13,cyl+32,6,2);ax.fill()}ax.fillStyle=metal(x-cyl/2,x+cyl/2,[60,80,110]);}
+   // window
+   ax.fillStyle="#0f1418";RR(x-cyl/2+9,ctop+8,cyl-18,cbot-ctop-8,4);ax.fill();
+   ax.fillStyle=hot?T2rgb(p.Th,.92):T2rgb(p.Tc,.92);ax.fillRect(x-cyl/2+11,ctop+10,cyl-22,py-ctop-10);
+   // gas dots
+   ax.fillStyle="rgba(255,255,255,.7)";const h=py-ctop-12;for(let i=0;i<14;i++){const yy=ctop+12+((i*29.7+t*(hot?90:45)*(1+i%3))%Math.max(4,h)),xx=x-cyl/2+14+((i*17.3)%(cyl-28));ax.beginPath();ax.arc(xx,yy,1.4,0,7);ax.fill()}
+   ax.fillStyle="#2a2a2a";RR(x-cyl/2+10,py,cyl-20,22,3);ax.fill();
+   // rod
+   ax.strokeStyle=metal(x-4,x+4);ax.lineWidth=7;ax.lineCap="round";ax.beginPath();ax.moveTo(x,py+20);ax.lineTo(pinx,piny);ax.stroke();
+   ax.fillStyle="#222";ax.beginPath();ax.arc(pinx,piny,5,0,7);ax.fill();
+   return py};
+  const phH=th,phC=th-Math.PI/2;const pyh=drawCyl(hx,phH,true),pyc=drawCyl(cx2,phC,false);
+  // flame under hot head (burner on the side wrapping head)
+  for(let k=0;k<5;k++){const fxk=hx-cyl/2-34+k*6,h=34+10*Math.sin(t*14+k*1.7);const g=ax.createLinearGradient(0,ctop+80,0,ctop+80-h);g.addColorStop(0,"rgba(40,90,255,.9)");g.addColorStop(.4,"rgba(255,170,30,.9)");g.addColorStop(1,"rgba(255,80,0,0)");
+   ax.fillStyle=g;ax.beginPath();ax.moveTo(fxk-5,ctop+80);ax.quadraticCurveTo(fxk-6,ctop+80-h*.6,fxk+2,ctop+80-h);ax.quadraticCurveTo(fxk+6,ctop+80-h*.5,fxk+5,ctop+80);ax.fill()}
+  ax.fillStyle="#555";RR(hx-cyl/2-46,ctop+80,40,46,4);ax.fill();txt("burner",hx-cyl/2-26,ctop+142,{align:"center",font:"500 11px 'Space Grotesk',sans-serif",color:"#433"});
+  // transfer tube + regenerator
+  const tg=ax.createLinearGradient(hx,0,cx2,0);tg.addColorStop(0,T2rgb(p.Th));tg.addColorStop(1,T2rgb(p.Tc));ax.strokeStyle="#4a4f55";ax.lineWidth=14;ax.beginPath();ax.moveTo(hx,ctop);ax.lineTo(hx,30);ax.lineTo(cx2,30);ax.lineTo(cx2,ctop);ax.stroke();
+  ax.strokeStyle=tg;ax.lineWidth=7;ax.stroke();
+  ax.fillStyle="#6b5e4a";RR(410,16,80,28,4);ax.fill();ax.strokeStyle="rgba(255,255,255,.35)";ax.lineWidth=1;for(let x=414;x<488;x+=5){ax.beginPath();ax.moveTo(x,18);ax.lineTo(x+6,42);ax.stroke()}
+  txt("regenerator",450,60,{align:"center",font:"500 11px 'Space Grotesk',sans-serif",color:"#433"});
+  // which way is gas flowing / phase label
+  const dVc=s.at(th+0.01).Vc-st.Vc;const coldSqueeze=dVc<0&&st.Vc>0.004;
+  txt(`HOT ${p.Th} K`,hx,ctop-10,{align:"center",font:"700 12px 'Space Grotesk',sans-serif",color:"#b2401c",bg:"rgba(255,255,255,.85)"});
+  txt(`COLD ${p.Tc} K`,cx2+70,ctop+40,{align:"left",font:"700 12px 'Space Grotesk',sans-serif",color:"#1d63a6",bg:"rgba(255,255,255,.85)"});
+  if(coldSqueeze){txt("cold gas being squeezed → heat out through the fins (the T2 part!)",20,AH-16,{font:"600 12px 'Space Grotesk',sans-serif",color:"#fff",bg:"rgba(29,99,166,.92)"});
+   ax.strokeStyle="#1d63a6";ax.lineWidth=2.5;for(let k=0;k<3;k++){const yy=ctop+18+k*26,o=(t*30)%14;ax.beginPath();ax.moveTo(cx2+cyl/2+18+o,yy);ax.lineTo(cx2+cyl/2+34+o,yy);ax.stroke()}}
+  dial(760,220,34,st.P/ (niceUp(Math.max(...s.pts.map(q=>q.P))*1.05,[2e5,3e5,4e5,5e5,6e5,8e5,1e6])),"×100 kPa",`${f0(st.P/1000)} kPa`,{});
+  txt(`${f0(p.rpm)} rpm`,20,30,{font:"600 12px 'IBM Plex Mono',monospace",bg:"rgba(255,255,255,.85)"})},
+ graph(){const s=this.s,p=s.p,pm=niceUp(Math.max(...s.pts.map(q=>q.P))/1000*1.08,[150,200,250,300,400,500,600,800]);const th=s.th%(2*Math.PI),st=s.at(th);
+  const loop=s.pts.map(q=>[q.V,q.P/1000]);const cold=[];const seg=[];for(let i=0;i<s.pts.length-1;i++){if(s.pts[i+1].Vc<s.pts[i].Vc&&s.pts[i].Vc>0.003)seg.push([s.pts[i].V,s.pts[i].P/1000]);else if(seg.length){cold.push(seg.splice(0))}}if(seg.length)cold.push(seg);
+  const Vmin=Math.min(...s.pts.map(q=>q.V)),Vmax=Math.max(...s.pts.map(q=>q.V));
+  return plot({xr:[Vmin*0.85,Vmax*1.06],yr:[0,pm],xt:ticks(+(Vmin*0.9).toFixed(3),+(Vmax).toFixed(3),3),fmtx:x=>x.toFixed(3),yt:ticks(0,pm,4),xl:"Total gas volume V (m³)",yl:"Pressure P (kPa)",
+   curves:[{pts:loop,color:"var(--heat)",closed:true},{pts:loop,color:"var(--heat)",w:2.2}].concat(cold.map(c=>({pts:c,color:"var(--acc)",w:4}))),marks:[[st.V,st.P/1000,"var(--ink)",7]]})},
+ leg:`<span><i style="background:var(--heat)"></i>engine cycle (shaded = net work)</span><span><i style="background:var(--acc)"></i>cold gas being compressed (T2 part)</span>`,
+ ro(p){const s=this.s;return ro("Net work per cycle",f0(s.W),"J","w")+ro("Heat out at cold side",f0(-s.Qc),"J","q")+ro("Efficiency",f(s.eff*100,1),"%")+ro("Power",f0(s.W*p.rpm/60),"W")},
+ take(){const s=this.s,p=s.p;return `Each turn of the flywheel, the cold side dumps <b>${f0(-s.Qc)} J</b> of heat through its fins, and the hot side takes in ${f0(s.Qh)} J from the flame. The difference, <b>${f0(s.W)} J</b>, is the work, which is the shaded loop. Efficiency is ${f(s.eff*100,1)}%, equal to the Carnot limit 1 − T<sub>c</sub>/T<sub>h</sub> for this ideal model. Widen the temperature gap to get more work.`}};
+
+/* ================= 5. COMPRESSED-AIR ENERGY STORAGE ================= */
+const caes={tab:"Energy storage",title:"Compressed-air energy storage in a salt cavern",
+ lede:"When the wind blows harder than the grid needs, compressors pump air into a sealed salt cavern hundreds of metres underground. Spray cooling inside the compressor keeps the air near isothermal. See how much energy that saves.",
+ model:"Model: per kilogram of air from 1 bar, 20 °C. Closed polytropic compression, Pv<sup>k</sup> = constant, with k from 1.4 (no cooling, adiabatic) to 1.0 (full spray cooling, isothermal). W = RT<sub>0</sub>(r<sup>(k−1)/k</sup> − 1)/(k − 1), or RT<sub>0</sub> ln r when k = 1. R<sub>air</sub> = 287 J/(kg·K), c<sub>v</sub> = 718 J/(kg·K).",
+ ctl:[{id:"r",label:"Cavern pressure",min:5,max:70,step:1,v:60,unit:"bar"},{id:"c",label:"Spray cooling",min:0,max:100,step:5,v:0,unit:"%"},{id:"wind",label:"Wind speed",min:0,max:20,step:1,v:10,unit:"m/s"}],
+ btns:[],
+ init(p){const Ra=287,cv=718,T0=293,k=1.4-0.4*p.c/100,e=(k-1)/k,T2=T0*Math.pow(p.r,e);const W=k<1.0001?Ra*T0*Math.log(p.r):Ra*T0*(Math.pow(p.r,e)-1)/(k-1);
+  const dU=cv*(T2-T0);this.s={k,T2,W:W/1000,dU:dU/1000,Q:(dU-W)/1000,Wi:Ra*T0*Math.log(p.r)/1000,Wa:Ra*T0*(Math.pow(p.r,0.4/1.4)-1)/0.4/1000,rot:this.s?this.s.rot:0,flow:this.s?this.s.flow:0,p:{...p}}},
+ param(p){this.init(p)},
+ step(dt,p){this.s.rot+=dt*p.wind*0.35;this.s.flow+=dt*p.wind*0.08},
+ draw(t){const s=this.s,p=s.p;
+  // sky
+  const sky=ax.createLinearGradient(0,0,0,150);sky.addColorStop(0,"#8ec5ee");sky.addColorStop(1,"#d9eefb");ax.fillStyle=sky;ax.fillRect(0,0,AW,150);
+  ax.fillStyle="rgba(255,255,255,.8)";for(const [cx,cy,sc] of [[120,40,1],[520,28,.8],[760,52,1.1]]){const x=(cx+t*4*sc)%(AW+100)-50;ax.beginPath();ax.arc(x,cy,14*sc,0,7);ax.arc(x+16*sc,cy-6,18*sc,0,7);ax.arc(x+36*sc,cy,13*sc,0,7);ax.fill()}
+  // hills
+  ax.fillStyle="#7fae5a";ax.beginPath();ax.moveTo(0,150);ax.quadraticCurveTo(180,95,360,140);ax.quadraticCurveTo(520,120,700,145);ax.quadraticCurveTo(820,130,900,140);ax.lineTo(900,160);ax.lineTo(0,160);ax.fill();
+  // strata
+  const layers=[["#8b6f4e",160,190],["#a48a63",190,230],["#7d6a55",230,270],["#d9d4c7",270,380]];for(const [c,a,b] of layers){ax.fillStyle=c;ax.fillRect(0,a,AW,b-a)}
+  ax.fillStyle="rgba(0,0,0,.06)";for(let i=0;i<120;i++){ax.fillRect((i*73)%AW,170+((i*37)%200),3,2)}
+  txt("salt layer",20,292,{font:"600 12px 'Space Grotesk',sans-serif",color:"#6b6455"});txt("≈ 600 m down",20,312,{font:"500 11px 'IBM Plex Mono',monospace",color:"#6b6455"});
+  // turbines
+  for(const [x,y,sc] of [[90,118,.9],[180,104,1.1],[270,122,.85]]){ax.fillStyle="#f4f6f8";ax.beginPath();ax.moveTo(x-3*sc,y+40*sc);ax.lineTo(x-1.5*sc,y-50*sc);ax.lineTo(x+1.5*sc,y-50*sc);ax.lineTo(x+3*sc,y+40*sc);ax.fill();
+   ax.save();ax.translate(x,y-50*sc);ax.rotate(s.rot*(1+sc*.1));ax.fillStyle="#fbfcfd";ax.strokeStyle="#c4ccd3";ax.lineWidth=1;for(let k=0;k<3;k++){ax.rotate(2*Math.PI/3);ax.beginPath();ax.moveTo(0,-2);ax.quadraticCurveTo(6*sc,-24*sc,1.5*sc,-46*sc);ax.lineTo(-1.5*sc,-2);ax.fill();ax.stroke()}ax.fillStyle="#dde3e8";ax.beginPath();ax.arc(0,0,3.5*sc,0,7);ax.fill();ax.restore()}
+  // power line
+  ax.strokeStyle="#444";ax.lineWidth=1.3;ax.beginPath();ax.moveTo(270,70);ax.quadraticCurveTo(380,95,470,66);ax.stroke();
+  // compressor hall
+  ax.fillStyle="#e9ecef";ax.fillRect(470,70,170,82);ax.fillStyle="#9aa4ad";ax.beginPath();ax.moveTo(462,72);ax.lineTo(555,40);ax.lineTo(648,72);ax.fill();
+  ax.fillStyle="#5b6670";for(let i=0;i<4;i++)ax.fillRect(486+i*38,96,24,18);txt("COMPRESSOR HALL",555,140,{align:"center",font:"700 10px 'Space Grotesk',sans-serif",color:"#445"});
+  // cooling tower + plume
+  ax.fillStyle="#c9cfd4";ax.beginPath();ax.moveTo(670,152);ax.quadraticCurveTo(690,110,676,70);ax.lineTo(730,70);ax.quadraticCurveTo(716,110,736,152);ax.fill();
+  const heatOut=-s.Q/Math.max(s.Wa,1);if(heatOut>0.02&&p.wind>0){for(let i=0;i<8;i++){const u=(t*.25+i/8)%1;ax.fillStyle=`rgba(255,255,255,${(1-u)*0.75*Math.min(1,heatOut*1.5)})`;ax.beginPath();ax.arc(703+Math.sin(u*4+i)*10+u*30,66-u*60,8+u*18,0,7);ax.fill()}}
+  txt(p.c>0?`spray cooling ${p.c}% → heat to cooling tower`:"no cooling",703,24,{align:"center",font:"500 11px 'Space Grotesk',sans-serif",bg:"rgba(255,255,255,.85)"});
+  // shaft pipe
+  ax.fillStyle="#4b5157";ax.fillRect(548,152,14,170);
+  const g=ax.createLinearGradient(0,152,0,320);g.addColorStop(0,T2rgb(s.T2));g.addColorStop(1,T2rgb(s.T2));ax.fillStyle=g;ax.fillRect(551,152,8,170);
+  if(p.wind>0){ax.fillStyle="rgba(255,255,255,.85)";for(let i=0;i<7;i++){const u=(s.flow+i/7)%1;ax.beginPath();ax.arc(555,156+u*160,2,0,7);ax.fill()}}
+  // cavern
+  const cavT=s.T2;ax.save();ax.beginPath();ax.moveTo(420,330);ax.bezierCurveTo(400,280,470,300,520,312);ax.bezierCurveTo(560,300,660,280,700,320);ax.bezierCurveTo(730,360,640,372,560,366);ax.bezierCurveTo(480,372,430,360,420,330);ax.closePath();
+  const cg=ax.createRadialGradient(560,335,10,560,335,150);cg.addColorStop(0,T2rgb(cavT,.95));cg.addColorStop(1,T2rgb(cavT,.65));ax.fillStyle=cg;ax.fill();ax.strokeStyle="#8f8676";ax.lineWidth=2;ax.stroke();ax.restore();
+  txt(`air enters cavern at ${f0(s.T2-273)} °C`,560,336,{align:"center",font:"600 13px 'IBM Plex Mono',monospace",color:"#fff",bg:"rgba(0,0,0,.35)"});
+  dial(800,300,32,p.r/80,"bar",`${p.r} bar`,{});
+  if(s.T2>330)txt("this heat leaks into the rock",560,358,{align:"center",font:"500 11px 'Space Grotesk',sans-serif",color:"#7a2a10"});
+  txt(p.wind===0?"No wind: compressors idle":`wind ${p.wind} m/s → storing energy`,20,30,{bg:"rgba(255,255,255,.85)"})},
+ graph(){const s=this.s,mx=niceUp(Math.max(s.Wa,s.W)*1.1,[100,200,300,400,500,600,800]);const bars=[["Work in",s.W,"var(--acc)"],["Heat removed",-s.Q,"var(--bath)"],["Heat lost in cavern",s.dU,"var(--heat)"],["Isothermal minimum",s.Wi,"var(--muted)"]];
+  const W=420,l=150,r=70;let o="";bars.forEach((b,i)=>{const y=20+i*50,w=(W-l-r)*Math.max(0,b[1])/mx;o+=`<text class="al" x="${l-8}" y="${y+20}" text-anchor="end">${b[0]}</text><rect x="${l}" y="${y}" width="${w}" height="30" rx="4" fill="${b[2]}"/><text class="tk" x="${l+w+6}" y="${y+20}" style="font-size:12px">${f0(b[1])} kJ</text>`});
+  return o+`<text class="tk" x="${l}" y="236">energy per kilogram of air stored</text>`},
+ leg:"",
+ ro(){const s=this.s;return ro("Air temp entering cavern",f0(s.T2-273),"°C","q")+ro("Work in",f0(s.W),"kJ/kg","w")+ro("Lost as it cools",f0(s.dU),"kJ/kg")+ro("Exponent k",s.k.toFixed(2),"")},
+ take(){const s=this.s;return s.k<1.001?`Fully cooled, so the air goes in at room temperature. The work is the isothermal minimum, <b>${f0(s.Wi)} kJ per kg</b>, and nothing leaks away in the cavern.`
+  :`The air reaches <b>${f0(s.T2-273)} °C</b>. Unless that heat is captured, ${f0(s.dU)} kJ/kg leaks into the rock as it cools, which is ${f0(s.dU/s.W*100)}% of the energy you paid for. Older plants like Huntorf in Germany cool the air and lose this heat, which is why newer designs aim for near-isothermal or heat-storing compression.`}};
+
+const APPS=[pump,scuba,comp,stir,caes];
+let AP={i:0,p:{}},aLast=performance.now(),aVisible=false;
+new IntersectionObserver(e=>{aVisible=e[0].isIntersecting},{threshold:0.05}).observe(acv);
+function simTabs(){$("simtabs").innerHTML=APPS.map((m,i)=>`<button role="tab" aria-pressed="${i===AP.i}" data-tab="${i}">${i+1}. ${m.tab}</button>`).join("");
+ $("simtabs").querySelectorAll("button").forEach(b=>b.onclick=()=>openSim(+b.dataset.tab))}
+function openSim(i){AP.i=i;const m=APPS[i];AP.p={};m.ctl.forEach(c=>AP.p[c.id]=c.v);m.s=null;m.init(AP.p);
+ $("simtitle").textContent=m.title;$("simlede").textContent=m.lede;$("simmodel").innerHTML=m.model;$("simleg").innerHTML=m.leg;
+ $("simctl").innerHTML=m.ctl.map(c=>c.toggle?`<label class="row ui" style="gap:8px;font-weight:600"><input type="checkbox" id="sc_${c.id}" ${c.v?"checked":""}> ${c.label}</label>`
+  :c.opts?`<label class="ui" style="font-weight:600">${c.label} <select id="sc_${c.id}">${c.opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join("")}</select></label>`
+  :`<div class="ctl"><div class="top"><label for="sc_${c.id}">${c.label}</label><span class="val"><output id="so_${c.id}">${c.v}</output><small>${c.unit}</small></span></div><input type="range" id="sc_${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.v}"></div>`).join("")
+  +(m.btns.length?`<div class="row">${m.btns.map((b,k)=>`<button data-b="${b[0]}" class="${k===0?"main":""}">${b[1]}</button>`).join("")}</div>`:"");
+ m.ctl.forEach(c=>{const e=$("sc_"+c.id);const pp=()=>{if(!c.toggle&&!c.opts)e.style.setProperty("--p",(e.value-c.min)/(c.max-c.min)*100+"%")};pp();
+  e.oninput=e.onchange=()=>{AP.p[c.id]=c.toggle?(e.checked?1:0):c.opts?e.value:+e.value;if(!c.toggle&&!c.opts)$("so_"+c.id).textContent=e.value;pp();if(m.param)m.param(AP.p,c.id);aInfo()}});
+ $("simctl").querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{m.btn(b.dataset.b,AP.p);aInfo()});
+ simTabs();aInfo();aFrame(performance.now(),true)}
+let infoT=0;
+function aInfo(){const m=APPS[AP.i];$("simro").innerHTML=m.ro(AP.p);$("simtake").innerHTML=m.take(AP.p);$("simgraph").innerHTML=m.graph(AP.p)}
+function aFrame(now,force){const dt=Math.min(0.05,(now-aLast)/1000);aLast=now;const m=APPS[AP.i];
+ if(aVisible||force){m.step(dt,AP.p);ax.setTransform(aScale,0,0,aScale,0,0);ax.clearRect(0,0,AW,AH);ax.lineCap="butt";m.draw(now/1000);
+  if(now-infoT>120){infoT=now;aInfo()}}
+ if(!force)requestAnimationFrame(aFrame)}
+document.querySelectorAll("[data-sim]").forEach(b=>b.onclick=()=>{openSim(+b.dataset.sim);$("simbox").scrollIntoView({behavior:"smooth",block:"start"})});
+openSim(0);window.__appsReady=true;requestAnimationFrame(aFrame);
+
+
+/* ---------- tabs ---------- */
+const VIEWS=["lab","data","model","applications"];let VIEW="lab";
+function showView(v,noHash){if(!VIEWS.includes(v))v="lab";VIEW=v;
+ VIEWS.forEach(k=>{$("v-"+k).hidden=k!==v;const b=document.querySelector(`.tabs [data-view="${k}"]`);b.setAttribute("aria-selected",k===v)});
+ if(!noHash&&location.hash!=="#"+v){try{history.replaceState(null,"","#"+v)}catch(e){location.hash=v}}
+ if(v==="data")drawIG();if(v==="applications"&&window.__appsReady){afit();aFrame(performance.now(),true)}
+ window.scrollTo({top:0})}
+document.querySelectorAll(".tabs [data-view]").forEach(b=>b.onclick=()=>showView(b.dataset.view));
+window.addEventListener("hashchange",()=>showView(location.hash.slice(1),true));
+/* ---------- start ---------- */
+jumpTo(Vi);syncSliders();renderTable();show(0);showView(location.hash.slice(1)||"lab",true);requestAnimationFrame(loop);
+</script>
+</body>
+</html>
