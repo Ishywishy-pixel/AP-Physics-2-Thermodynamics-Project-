@@ -168,6 +168,19 @@ sub,sup{font-size:.72em;line-height:0;position:relative;vertical-align:baseline}
 @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .jump{margin-top:8px}
 .tnote{margin:10px 0 0;padding:9px 12px;border-radius:8px;background:var(--heat2);border-left:4px solid var(--heat);font-size:.88rem;line-height:1.5}
+.writeup{max-width:880px;margin:0 auto;padding:26px 32px;font-size:1rem;line-height:1.65}
+.writeup h2{font-size:1.35rem;margin:1.4em 0 .4em;padding-bottom:.25em;border-bottom:2px solid var(--line)}
+.writeup h2:first-child{margin-top:0}
+.writeup h3{font-size:1.05rem;margin:1.1em 0 .3em;color:var(--heat)}
+.writeup p{margin:0 0 .7em}
+.writeup ul{padding-left:1.2em;margin:.2em 0 .9em}.writeup li{margin-bottom:.4em}
+.eqb{border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:8px;padding:10px 14px;margin:0 0 10px;background:var(--bg)}
+.eqb .eqn{font:600 1.1rem var(--mono);color:var(--acc);margin-bottom:4px}
+.eqb p{margin:0 0 4px;font-size:.95rem}
+.eqb dl{display:grid;grid-template-columns:auto 1fr;gap:2px 16px;font-size:.92rem;margin:6px 0 0}
+.eqb dd{margin:0}
+.eqb dt{font:600 .9rem var(--mono);color:var(--ink)}
+ul.lim li{margin-bottom:.6em}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--card);font:500 .9rem var(--sans);padding:9px 16px;border-radius:9px;opacity:0;transition:opacity .25s;pointer-events:none}
 .toast.on{opacity:1}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -288,23 +301,63 @@ sub,sup{font-size:.72em;line-height:0;position:relative;vertical-align:baseline}
 </div><!-- /view data -->
 
 <div class="view" id="v-model" hidden>
-<div class="model">
- <section class="panel"><h2>System and energy transfers</h2>
-  <ul><li><b>System:</b> the 1 mol of ideal gas in the cylinder.</li>
-  <li><b>Surroundings:</b> the piston (you) and the water bath.</li>
-  <li><b>Work:</b> into the gas (W &gt; 0) because the piston pushes inward.</li>
-  <li><b>Heat:</b> out of the gas into the bath (Q &lt; 0), the same size as W.</li>
-  <li><b>ΔU = 0</b>, because U of an ideal gas depends only on T.</li></ul></section>
- <section class="panel"><h2>Assumptions</h2>
-  <ul><li>Ideal gas: point molecules, no forces between them.</li>
-  <li>Quasi-static: slow enough that the gas is in equilibrium at every step.</li>
-  <li>The bath is big enough that its temperature never changes.</li>
-  <li>Closed cylinder (n = 1 mol) and a frictionless piston.</li></ul></section>
- <section class="panel"><h2>Limitations</h2>
-  <ul><li>Tiny volumes / high pressures: real gases stop acting ideal and can liquefy, so V stops at 0.006 m³.</li>
-  <li>Heat leaves through the wall at a finite rate (time constant 0.03 s, an estimate). A fast push leaves no time for it, so T rises. Watch the thermocouple meter.</li>
-  <li>The moving dots are a 2D picture. The numbers come from the equations, not from counting dots.</li></ul></section>
-</div>
+<article class="panel writeup">
+ <h2>About the model</h2>
+ <p>This simulation models the slow, isothermal compression of an ideal gas in a cylinder that sits in a water bath. It investigates how the bath temperature and the final volume affect the gas pressure, the work done on the gas, and the heat that flows out to the bath, and why the gas's internal energy doesn't change.</p>
+
+ <h3>Isothermal processes</h3>
+ <p>An isothermal process is one in which the temperature of the system stays constant. For a gas, this happens when it is in good thermal contact with a large reservoir and the change happens slowly enough for heat to flow out as fast as energy is added.</p>
+ <p>The internal energy of an ideal gas depends only on its temperature. So in an isothermal process, ΔU = 0, and every joule of work done on the gas leaves as heat.</p>
+
+ <h3>Work done on a gas</h3>
+ <p>When a piston pushes inward, it does positive work on the gas (W &gt; 0). On a P–V graph, the work done on the gas is the area under the curve.</p>
+ <ul>
+  <li>At constant temperature, pressure rises as volume shrinks (P = nRT/V), so the curve is a hyperbola, not a straight line. Because P is not constant, W = PΔV can't be used directly.</li>
+  <li>Each extra squeeze costs more work than the last, because the gas is already pushing back harder.</li>
+  <li>A hotter gas pushes back harder at every volume, so compressing it takes more work, and more heat has to leave to keep its temperature steady.</li>
+ </ul>
+
+ <h2>Simulation overview</h2>
+ <p>In this simulation, 1 mol of ideal gas starts at 0.024 m³ in a cylinder inside a water bath held at a set temperature (300 K by default). You push the piston in to a final volume of your choice, either with the Compress button or by dragging the handle.</p>
+ <p>The lab guide walks you through 11 steps. They include two investigations of five trials each:</p>
+ <ul>
+  <li><b>Investigation 1:</b> vary the temperature (200–600 K) while keeping the final volume at 0.012 m³.</li>
+  <li><b>Investigation 2:</b> vary the final volume (0.006–0.024 m³) while keeping the temperature at 300 K.</li>
+ </ul>
+ <p>Each logged run is added to the data table and plotted on the investigation graph next to the theoretical curve. The guide also shows how to estimate the work from the area under the P–V curve using trapezoids, and compares the isothermal process with an insulated (adiabatic) what-if.</p>
+
+ <h2>System</h2>
+ <p>The system is the 1 mol of ideal gas inside the cylinder. The surroundings are the piston (and whoever is pushing it) and the water bath. Energy crosses the system boundary in two ways:</p>
+ <ul>
+  <li><b>Work</b>, as the piston pushes inward. This is energy into the gas, so W &gt; 0.</li>
+  <li><b>Heat</b>, through the steel cylinder wall into the bath. This is energy out of the gas, so Q &lt; 0.</li>
+ </ul>
+ <p>No gas enters or leaves the cylinder, so the amount of gas stays at 1 mol.</p>
+
+ <h2>Governing equations and concepts</h2>
+ <p>The model uses the following equations to calculate the state of the gas and the energy transfers.</p>
+ <div class="eqb"><div class="eqn">PV = nRT</div><p>The ideal gas law. Links the pressure, volume and temperature of the gas at any equilibrium state.</p>
+  <dl><dt>P</dt><dd>Pressure (Pa)</dd><dt>V</dt><dd>Volume (m³)</dd><dt>n</dt><dd>Amount of gas (mol)</dd><dt>R</dt><dd>Gas constant, 8.314 J/(mol·K)</dd><dt>T</dt><dd>Temperature (K)</dd></dl></div>
+ <div class="eqb"><div class="eqn">ΔU = Q + W</div><p>The first law of thermodynamics, using the AP sign convention.</p>
+  <dl><dt>ΔU</dt><dd>Change in internal energy of the gas (J)</dd><dt>Q</dt><dd>Heat added to the gas (J). Negative when heat leaves.</dd><dt>W</dt><dd>Work done <i>on</i> the gas (J). Positive when the gas is compressed.</dd></dl></div>
+ <div class="eqb"><div class="eqn">ΔU = (3/2)nRΔT</div><p>Internal energy of an ideal monatomic gas. It depends only on temperature, so when T is constant, ΔU = 0.</p></div>
+ <div class="eqb"><div class="eqn">W = area under the P–V curve ≈ Σ ½(P₁ + P₂)ΔV</div><p>Work done on the gas, estimated by splitting the area into trapezoids of width ΔV. More strips give a better estimate.</p></div>
+ <div class="eqb"><div class="eqn">W = nRT ln(V<sub>i</sub> / V<sub>f</sub>)</div><p>The exact area under the isotherm P = nRT/V. The model uses it to calculate the work and to check the trapezoid estimate.</p></div>
+ <div class="eqb"><div class="eqn">Q = −W</div><p>Heat for an isothermal process, found by combining the first law with ΔU = 0. All the work done on the gas leaves as heat.</p></div>
+ <div class="eqb"><div class="eqn">PV<sup>γ</sup> = constant, γ = 5/3</div><p>Used only for the insulated what-if. No heat can leave (Q = 0), so W = ΔU and the gas heats up.</p></div>
+
+ <h2>Assumptions and limitations</h2>
+ <ul class="lim">
+  <li><b>Ideal gas.</b> Molecules are treated as points with no forces between them. At very small volumes and high pressures, real gases stop following PV = nRT and can even liquefy. That's why the final volume can't go below 0.006 m³.</li>
+  <li><b>Slow (quasi-static) compression.</b> A perfectly isothermal process is the limit of pushing infinitely slowly. To make this visible, the model lets heat flow through the cylinder wall at a finite rate, with a time constant of 0.03 s. This is a model choice, not a measured value. During a push, the gas runs slightly warmer than the bath. A fast push heats it more and needs slightly more work than the ideal value. The data table logs the ideal values.</li>
+  <li><b>Large reservoir.</b> The bath's temperature is assumed not to change. In reality, the 1,729 J from a standard run would warm 10 kg of water by only about 0.04 °C, so this is reasonable.</li>
+  <li><b>Frictionless, sealed piston.</b> No energy is lost to friction, and no gas leaks past the piston.</li>
+  <li><b>Monatomic gas for the insulated what-if.</b> The adiabatic comparison uses γ = 5/3. A diatomic gas such as air would heat up less. The isothermal results don't depend on the type of gas.</li>
+  <li><b>Particle animation.</b> The moving dots are a 2D picture of the idea that more collisions mean more pressure. The numbers come from the equations, not from counting dots, and the hit counter is random and approximate.</li>
+  <li><b>Real-world applications.</b> Each application simulation uses its own simplified model, described under that simulation.</li>
+ </ul>
+</article>
+
 </div><!-- /view model -->
 <div class="view" id="v-applications" hidden>
 <section class="panel apps" id="apps" aria-label="Real-world applications">
