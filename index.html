@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"> 
-<meta name="viewport" content="width=device-width, initial-scale=1"> 
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Isothermal Compression Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -167,6 +167,7 @@ sub,sup{font-size:.72em;line-height:0;position:relative;vertical-align:baseline}
 .view{animation:fadein .2s ease}
 @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .jump{margin-top:8px}
+.tnote{margin:10px 0 0;padding:9px 12px;border-radius:8px;background:var(--heat2);border-left:4px solid var(--heat);font-size:.88rem;line-height:1.5}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--card);font:500 .9rem var(--sans);padding:9px 16px;border-radius:9px;opacity:0;transition:opacity .25s;pointer-events:none}
 .toast.on{opacity:1}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -213,6 +214,7 @@ sub,sup{font-size:.72em;line-height:0;position:relative;vertical-align:baseline}
    <div class="ro"><span>ΔU</span><b class="num" id="rU"></b></div>
    <div class="ro"><span>Piston hits</span><b class="num" id="rH"></b></div>
   </div>
+  <p class="tnote"><b>Why does the temperature wobble if this is isothermal?</b> Heat only flows from hot to cold, so for heat to leave, the gas has to be a little warmer than the bath. While you push, it runs slightly above 300 K (see ΔT on the meter), then settles back once you stop. The slower you push, the smaller ΔT gets. A perfectly isothermal process is the limit of pushing infinitely slowly. T still starts and ends at the bath temperature, so ΔU = 0 overall.</p>
  </section>
 
  <aside class="panel guide" aria-label="Lab guide">
@@ -358,6 +360,14 @@ const TAU=0.03; // gas-to-bath heat transfer time constant (s), an estimate
 function liveSt(){const P=n*R*S.Tg/S.V;return{V:S.V,T:S.Tg,P,W:S.Wacc,Q:S.Qacc,dU:S.Wacc+S.Qacc}}
 function jumpTo(V){const s=st(V);S.V=V;prevV=V;S.target=null;S.Tg=s.T;S.Wacc=s.W;S.Qacc=s.Q;S.maxdT=0;S.heatRate=0;
  S.path=[];for(let i=0;i<=60;i++){const v=Vi+(V-Vi)*i/60;S.path.push([v,st(v).P])}}
+// smoothed values + hold timers so labels don't flicker frame to frame
+function smooth(dt,now){const a=k=>1-Math.exp(-dt/k);
+ S.hrS=(S.hrS||0)+((S.heatRate||0)-(S.hrS||0))*a(0.25);
+ S.dTS=(S.dTS||0)+((S.Tg-S.T)-(S.dTS||0))*a(0.2);
+ S.vS=(S.vS||0)+(S.vdot-(S.vS||0))*a(0.15);
+ if(Math.abs(S.hrS)>3)S.heatSeen=now;
+ if(drag||S.target!==null||Math.abs(S.vdot)>1e-6)S.actSeen=now;
+ if(!S.dispT||now-S.dispT>250){S.dispT=now;S.disp={Tg:S.Tg,dT:S.dTS,hr:S.hrS}}}
 function thermo(dV,dt){const K=10,iso=S.mode==="iso";
  if(dV<0&&prevV>=Vi-1e-9){S.Wacc=0;S.Qacc=0;S.path=[[Vi,n*R*S.Tg/Vi]];S.maxdT=0}
  for(let k=0;k<K;k++){const v=prevV+dV*(k+.5)/K,dv=dV/K;
@@ -430,7 +440,7 @@ function loop(t){
  let dt=Math.min(0.033,(t-last)/1000);last=t;
  // piston motion
  if(S.target!==null){const d=S.target-S.V,rate=0.0042;const step=Math.sign(d)*Math.min(Math.abs(d),rate*dt);S.V+=step;if(Math.abs(S.target-S.V)<1e-7){S.V=S.target;S.target=null}}
- const dV=S.V-prevV;S.vdot=dV/Math.max(dt,1e-4);thermo(dV,dt);prevV=S.V;
+ const dV=S.V-prevV;S.vdot=dV/Math.max(dt,1e-4);thermo(dV,dt);prevV=S.V;smooth(dt,t);
  stepParticles(dt);
  draw(t/1000);
  if(Math.abs(S.vdot)>1e-7||(S.mode==="iso"&&Math.abs(S.Tg-S.T)>0.02)||t-acc>250){update();acc=t}
@@ -495,12 +505,12 @@ function draw(time){
  const tint=Math.max(0,Math.min(1,(s.T-S.T)/40));
  g=ctx.createLinearGradient(0,YT,0,YB);g.addColorStop(0,`rgba(${246},${250-60*tint},${255-120*tint},1)`);g.addColorStop(1,`rgba(${226},${236-60*tint},${246-120*tint},1)`);ctx.fillStyle=g;ctx.fillRect(X0,YT,xp-X0,YB-YT);
  // heat flux into the bath
- const hr=S.heatRate||0;
- if(iso&&Math.abs(hr)>3){const a=Math.min(1,Math.abs(hr)/1500);ctx.globalAlpha=0.25+0.75*a;const out=hr>0;const N=Math.max(2,Math.floor((xp-X0)/70));
+ const nowMs=performance.now(),D=S.disp||{Tg:S.Tg,dT:0,hr:0},hr=S.hrS||0;
+ if(iso&&nowMs-(S.heatSeen||0)<1200){const a=Math.min(1,Math.abs(hr)/1500);ctx.globalAlpha=0.25+0.75*a;const out=hr>0;const N=Math.max(2,Math.floor((xp-X0)/70));
   for(let i=0;i<N;i++){const x=X0+30+i*((xp-X0-60)/Math.max(1,N-1));
    for(const side of [-1,1]){const y0=side<0?YT-18:YB+18,y1=side<0?YT-50:YB+50;const ph=Math.sin(time*8+i)*3;
     out?arrow(x+ph,y0,x-ph,y1,2.5,col.heat):arrow(x-ph,y1,x+ph,y0,2.5,col.heat)}}
-  ctx.globalAlpha=1;txt(`${out?"heat into bath":"heat from bath"}: ${f0(Math.abs(hr))} W`,X0+(xp-X0)/2,YT-60,{align:"center",font:"600 12px 'Space Grotesk',sans-serif",color:"#fff",bg:"rgba(221,90,36,.9)"})}
+  ctx.globalAlpha=1;txt(`${D.hr>=0?"heat into bath":"heat from bath"}: ${f0(Math.abs(D.hr))} W`,X0+(xp-X0)/2,YT-60,{align:"center",font:"600 12px 'Space Grotesk',sans-serif",color:"#fff",bg:"rgba(221,90,36,.9)"})}
  for(const fl of flashes){ctx.globalAlpha=fl.life/0.6;ctx.fillStyle=col.heat;ctx.beginPath();ctx.arc(fl.x,fl.dir<0?YT-6-(0.6-fl.life)*40:YB+6+(0.6-fl.life)*40,3,0,7);ctx.fill()}ctx.globalAlpha=1;
  if(S.follow&&trail.length>1){ctx.strokeStyle=col.heat;ctx.lineWidth=2;ctx.globalAlpha=.7;ctx.beginPath();trail.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.stroke();ctx.globalAlpha=1}
  for(let i=0;i<P.length;i++){const p=P[i];const sp=Math.hypot(p.vx,p.vy);ctx.fillStyle=speedColor(sp);ctx.beginPath();ctx.arc(p.x,p.y,(S.follow&&i===0)?6:PR,0,7);ctx.fill();
@@ -523,7 +533,11 @@ function draw(time){
  ctx.fillStyle=metal(hx-12,hx,[120,126,132]);rr(hx-12,268,12,24,3);ctx.fill();
  ctx.fillStyle=drag?"#9c3a12":"#1b1f23";rr(hx,236,20,88,9);ctx.fill();ctx.fillStyle="rgba(255,255,255,.18)";rr(hx+4,242,4,76,2);ctx.fill();
  ctx.strokeStyle="rgba(255,255,255,.12)";for(let y=250;y<316;y+=8){ctx.beginPath();ctx.moveTo(hx+2,y);ctx.lineTo(hx+18,y);ctx.stroke()}
- if(S.vdot<-1e-6){arrow(hx+84,226,hx+30,226,4,col.acc);txt("you push: W > 0",hx+32,212,{font:"600 12px 'Space Grotesk',sans-serif",color:col.acc})}
+ const active=drag||nowMs-(S.actSeen||0)<700,lf={font:"600 12px 'Space Grotesk',sans-serif"};
+ if(active){const lx=Math.min(hx+20,CW-8),bg="rgba(255,255,255,.9)";
+  if(S.vS<-2e-5){arrow(hx+8,224,hx-48,224,4,col.acc);txt("you push in: W > 0",lx,206,{...lf,align:"right",color:col.acc,bg})}
+  else if(S.vS>2e-5){arrow(hx-48,224,hx+8,224,4,col.heat);txt("you pull out: W < 0",lx,206,{...lf,align:"right",color:col.heat,bg})}
+  else txt("holding the piston",lx,206,{...lf,align:"right",color:"#556",bg})}
  else if(S.V>Vi-1e-6&&S.target===null)txt("drag the handle ◀",CW-8,346,{align:"right",font:"500 12px 'Space Grotesk',sans-serif",color:"#556"});
  if(Math.abs(xp-xpOf(S.Vf))>40)txt("Piston",xp+7,YT-36,{align:"center",font:"600 11px 'Space Grotesk',sans-serif",color:"#334"});
  // Bourdon gauge
@@ -537,12 +551,14 @@ function draw(time){
  // thermocouple + meter
  ctx.fillStyle=metal(324,336,[150,118,60]);rr(324,YT-28,12,14,2);ctx.fill();
  ctx.strokeStyle="#c8a000";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(330,YT-28);ctx.bezierCurveTo(330,120,360,60,600,74);ctx.stroke();
- ctx.fillStyle="#2d3338";rr(600,22,190,104,10);ctx.fill();ctx.fillStyle="#b9cdb3";rr(612,34,166,66,6);ctx.fill();
- txt("GAS",620,58,{font:"600 11px 'IBM Plex Mono',monospace",color:"#2a3a2a"});txt(hide?"???.? K":`${s.T.toFixed(1)} K`,770,60,{align:"right",font:"600 20px 'IBM Plex Mono',monospace",color:"#16241a"});
- txt("BATH",620,88,{font:"600 11px 'IBM Plex Mono',monospace",color:"#2a3a2a"});txt(hide?"???.? K":(iso?`${S.T.toFixed(1)} K`:"— —"),770,90,{align:"right",font:"600 15px 'IBM Plex Mono',monospace",color:"#16241a"});
- txt("thermocouple meter",695,118,{align:"center",font:"500 10px 'Space Grotesk',sans-serif",color:"#cfd6db"});
- if(!hide&&iso&&Math.abs(s.T-S.T)>=0.05)txt(`gas is ${f(Math.abs(s.T-S.T),1)} K ${s.T>S.T?"warmer":"cooler"} than the bath`,695,146,{align:"center",font:"600 11px 'Space Grotesk',sans-serif",color:"#fff",bg:s.T>S.T?"rgba(221,90,36,.92)":"rgba(29,99,166,.92)"});
- txt(`hits on piston: ${hide?"?":(hits.length/2).toFixed(0)} per s`,560,200,{font:"500 12px 'IBM Plex Mono',monospace",color:"#556"});
+ ctx.fillStyle="#2d3338";rr(600,14,190,138,10);ctx.fill();ctx.fillStyle="#b9cdb3";rr(612,24,166,96,6);ctx.fill();
+ const mf="600 11px 'IBM Plex Mono',monospace",dT=Math.abs(D.dT)<0.05?0:D.dT;
+ txt("GAS",620,48,{font:mf,color:"#2a3a2a"});txt(hide?"???.? K":`${(iso?S.T+dT:D.Tg).toFixed(1)} K`,770,50,{align:"right",font:"600 20px 'IBM Plex Mono',monospace",color:"#16241a"});
+ txt("BATH",620,78,{font:mf,color:"#2a3a2a"});txt(hide?"???.? K":(iso?`${S.T.toFixed(1)} K`:"— —"),770,79,{align:"right",font:"600 15px 'IBM Plex Mono',monospace",color:"#16241a"});
+ txt("ΔT",620,107,{font:mf,color:"#2a3a2a"});txt(hide||!iso?"— —":`${dT>0?"+":dT<0?"−":""}${Math.abs(dT).toFixed(1)} K`,770,108,{align:"right",font:"600 15px 'IBM Plex Mono',monospace",color:dT>0.3?"#a3360f":dT<-0.3?"#174f86":"#16241a"});
+ txt("thermocouple meter",695,140,{align:"center",font:"500 10px 'Space Grotesk',sans-serif",color:"#cfd6db"});
+ if(!hide&&iso)txt(dT>0.3?"gas warmer than bath → heat flows out":dT<-0.3?"gas cooler than bath → heat flows in":"gas and bath at the same temperature",695,172,{align:"center",font:"600 11px 'Space Grotesk',sans-serif",color:"#334",bg:"rgba(255,255,255,.88)"});
+ txt(`hits on piston: ${hide?"?":(hits.length/2).toFixed(0)} per s`,560,384,{font:"500 12px 'IBM Plex Mono',monospace",color:"#556"});
  // tank frame (front)
  ctx.strokeStyle="#5c656d";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(30,146);ctx.lineTo(30,400);ctx.lineTo(530,400);ctx.lineTo(530,146);ctx.stroke();
  ctx.fillStyle="rgba(255,255,255,.12)";ctx.fillRect(36,150,10,248);
@@ -663,7 +679,7 @@ let tt;function toast(m){const e=$("toast");e.textContent=m;e.classList.add("on"
 function syncSliders(){$("sT").value=S.T;$("sV").value=S.Vf;$("oT").textContent=S.T;$("oV").textContent=S.Vf.toFixed(3);
  for(const id of ["sT","sV"]){const e=$(id);e.style.setProperty("--p",(e.value-e.min)/(e.max-e.min)*100+"%")}
  $("mIso").setAttribute("aria-pressed",S.mode==="iso");$("mAdi").setAttribute("aria-pressed",S.mode==="adi")}
-$("sT").oninput=e=>{S.T=+e.target.value;if(S.mode==="adi")jumpTo(S.V);syncSliders();drawIG();update()};
+$("sT").oninput=e=>{S.T=+e.target.value;if(S.mode==="adi"||(S.V>=Vi-1e-9&&S.target===null))jumpTo(S.V);syncSliders();drawIG();update()};
 $("sV").oninput=e=>{S.Vf=Math.round(+e.target.value*1000)/1000;if(S.V<S.Vf){S.V=S.Vf;S.target=null}if(S.target!==null)S.target=S.Vf<S.V?S.Vf:S.target;syncSliders();drawIG();update()};
 $("comp").onclick=()=>{S.target=S.Vf};
 $("exp").onclick=()=>{S.target=Vi};
